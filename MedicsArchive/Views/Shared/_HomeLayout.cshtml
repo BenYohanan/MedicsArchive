@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <title>@ViewData["Title"] | Medics Archive</title>
+
+        <!-- Favicon -->
+        <link rel="shortcut icon" type="image/x-icon" href="~/template/assets/img/favicon.png">
+
+        <!-- Apple Touch Icon -->
+        <link rel="apple-touch-icon" sizes="180x180" href="~/template/assets/img/apple-touch-icon.png">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="~/template/assets/css/bootstrap.min.css">
+
+        <!-- Feather CSS -->
+        <link rel="stylesheet" href="~/template/assets/plugins/icons/feather/feather.css">
+
+        <!-- Tabler Icon CSS -->
+        <link rel="stylesheet" href="~/template/assets/plugins/tabler-icons/tabler-icons.css">
+
+        <!-- Fontawesome CSS -->
+        <link rel="stylesheet" href="~/template/assets/plugins/fontawesome/css/fontawesome.min.css">
+        <link rel="stylesheet" href="~/template/assets/plugins/fontawesome/css/all.min.css">
+        <link href="~/css/sweetalert2.css" rel="stylesheet" />
+        <!-- Main CSS -->
+        <link rel="stylesheet" href="~/template/assets/css/style.css">
+
+        <script>
+            function errorAlert(message) {
+                Swal.fire({
+                    icon: 'error',
+                    text: message,
+                    timer: 60000,
+                    confirmButtonColor: "#366092",
+                })
+            }
+             function newSuccessAlert(message, url) {
+                Swal.fire({
+                    icon: 'success',
+                    text: message,
+                    confirmButtonColor: "#FF9B44",
+                }).then((isConfirm) => {
+                    if (isConfirm) {
+                        location.reload(url);
+                    }
+                })
+            }
+            function infoAlert(message) {
+                Swal.fire({
+                    icon: 'info',
+                    text: message,
+                    timer: 30000,
+                    confirmButtonColor: "#366092",
+                })
+            }
+
+            function successAlert(message) {
+                Swal.fire({
+                    icon: 'success',
+                    text: message,
+                    timer: 30000,
+                    confirmButtonColor: "#366092",
+                })
+            }
+
+            function successAlertWithRedirect(message, url) {
+                Swal.fire({
+                    title: "Success",
+                    text: message,
+                    icon: "success",
+                    timer: 30000,
+                    overlay: "background - color: rgba(43, 165, 137, 0.45)",
+                    confirmButtonColor: "#366092",
+                }).then(function () {
+
+                    location.href = url;
+                })
+            }
+        </script>
+    </head>
+    <body>
+
+        <div class="preloader"></div>
+
+        <main role="main" class="pb-3 mb-3">
+            @RenderBody()
+        </main>
+
+        <!-- jQuery -->
+        <script src="~/template/assets/js/jquery-3.7.1.min.js"></script>
+
+        <!-- Bootstrap Core JS -->
+        <script src="~/template/assets/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Feather Icon JS -->
+        <script src="~/template/assets/js/feather.min.js"></script>
+
+        <!-- Custom JS -->
+        <script src="~/template/assets/js/script.js"></script>
+
+        <script src="~/js/sweetalert2.all.min.js"></script>
+        <!-- Main Custom JS -->
+        <script type="text/javascript" src="~/template/js/script.js"></script>
+        <script src="~/js/site.js"></script>
+    </body>
+</html>
+

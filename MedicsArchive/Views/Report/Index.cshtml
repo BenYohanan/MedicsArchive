@@ -1,0 +1,235 @@
+﻿@model IEnumerable<Data.Models.ReportViewModel>
+@{
+	ViewData["Title"] = "Results";
+	Layout = "~/Views/Shared/_AdminLayout.cshtml";
+	var isAdmin = ViewBag.IsAdmin;
+}
+<style>
+
+	body {
+		counter-reset: Serial; /* / Set the Serial counter to 0 /*/
+	}
+
+	tr td:first-child:before {
+		counter-increment: Serial; /* / Increment the Serial counter /*/
+		content: counter(Serial); /*  / Display the counter /*/
+	}
+</style>
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+	<div class="content">
+		<div class="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
+			<div class="my-auto mb-2">
+				<h2 class="mb-1">Results</h2>
+			</div>
+			<div class="d-flex my-xl-auto right-content align-items-center flex-wrap ">
+				<div class="mb-2">
+					<a href="#" data-bs-toggle="modal" data-bs-target="#add_report" class="btn btn-primary d-flex align-items-center"><i class="ti ti-circle-plus me-2"></i>Add</a>
+				</div>
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-body p-0">
+				<div class="custom-datatable-filter table-responsive">
+					<table class="table datatable">
+						<thead class="thead-light">
+							<tr>
+								<th class="no-sort">
+									<div class="form-check form-check-md">
+										<input class="form-check-input" type="checkbox" id="select-all">
+									</div>
+								</th>
+								<th>Company</th>
+								<th>Patient Details</th>
+								<th>Study Date</th>
+								<th>Study Name</th>
+								<th>Clinical Information</th>
+								@if (isAdmin)
+								{
+									<th></th>
+								}
+							</tr>
+						</thead>
+						<tbody>
+							@if (Model != null && Model.Count() > 0)
+							{
+								@foreach (var report in Model)
+								{
+									var conclusion = report.Conclusion;
+									var studyDescription = report.StudyDescription;
+									var exam = report.Exam;
+									var patientName = isAdmin ? @report.PatientName : "*********";
+									<tr>
+										<td>
+											<div class="form-check form-check-md">
+												<input class="form-check-input" type="checkbox">
+											</div>
+										</td>
+										<td>@report.Institution</td>
+										<td>
+											<div class="d-flex align-items-center file-name-icon">
+												<div class="">
+													<h6 class="fw-medium">
+														<a href="javascript:void(0);">@patientName</a>
+													</h6>
+													<span class="fs-12 fw-normal d-block">Patient No: @report.PatientID</span>
+													<span class="fs-12 fw-normal d-block">Age: @report.Age</span>
+													<span class="fs-12 fw-normal d-block">Gender: @report.Sex</span>
+												</div>
+											</div>
+										</td>
+										<td>@report.StudyDate</td>
+										<td>
+											@if (!string.IsNullOrEmpty(studyDescription))
+											{
+												var shortText = studyDescription.Length > 20
+												? studyDescription.Substring(0, 20) + "..."
+												: studyDescription;
+
+												<div class="d-flex align-items-center">
+													<p class="fs-14 fw-medium d-flex align-items-center mb-0">@shortText</p>
+													<a href="#" class="ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
+													   title="@studyDescription">
+														<i class="ti ti-info-circle text-info" style="color:#F37438 !important;"></i>
+													</a>
+												</div>
+											}
+										</td>
+										<td>
+											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@conclusion">
+												@if (!string.IsNullOrEmpty(conclusion))
+												{
+													@Html.Raw(conclusion.Length > 20
+																				? $"{conclusion.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
+																				: conclusion)
+																				}
+											</a>
+										</td>
+										
+										@if (isAdmin)
+										{
+											<td>
+												<div class="action-icon d-inline-flex">
+													<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_report" onclick="loadReportId('@report.Id')"><i class="ti ti-trash"></i></a>
+													@if (report.IsApproved)
+													{
+														<a href="javascript:void(0);" class="ms-2" title="Approved">
+															<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
+														</a>
+													}
+													else
+													{
+														<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
+													}
+												</div>
+											</td>
+										}
+									</tr>
+								}
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<!-- /Leaves list -->
+	</div>
+</div>
+<!-- /Page Wrapper -->
+
+<div class="modal fade" id="view_data" role="dialog">
+	<div class="modal-dialog modal-dialog-centered modal-md" role="document">
+		<div class="modal-content">
+			<div class="modal-body">
+				<div class="col-md-12">
+					<div class="form-group">
+						<p id="dataToView"></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="add_report">
+	<div class="modal-dialog modal-dialog-centered modal-md">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Upload Files</h4>
+				<button type="button" class="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="modal-body pb-0">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="mb-3">
+							<label class="form-label">Choose file(s)</label>
+							<input type="file" class="form-control" id="files" name="files" multiple />
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+				<button type="submit" onclick="saveReport(@isAdmin.ToString().ToLower())" id="submit_btn" class="btn btn-primary">Upload</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="delete_report">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-body text-center">
+				<input id="reportIdForDelete" hidden />
+				<span class="avatar avatar-xl bg-transparent-danger text-danger mb-3">
+					<i class="ti ti-trash-x fs-36"></i>
+				</span>
+				<h4 class="mb-1">Confirm Delete</h4>
+				<p class="mb-3">Are you sure want to delete this report?</p>
+				<div class="d-flex justify-content-center">
+					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
+					<a href="#" class="btn btn-danger" onclick="deleteReport()">Yes, Delete</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- /Delete Modal -->
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approve_modal">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-body text-center">
+				<input id="reportId" hidden />
+				<span class="avatar avatar-xl bg-transparent-success text-success mb-3">
+					<i class="ti ti-trash-x fs-36"></i>
+				</span>
+				<h4 class="mb-1">Confirm Approve</h4>
+				<p class="mb-3">Are you sure want to approve this report?</p>
+				<div class="d-flex justify-content-center">
+					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
+					<a href="#" class="btn btn-success" id="aprrove_btn" onclick="approveReport()">Yes, Approve</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- /Approve Modal -->
+
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		var viewModal = document.getElementById('view_data');
+
+		viewModal.addEventListener('show.bs.modal', function (event) {
+			var triggerLink = event.relatedTarget;
+			var content = triggerLink.getAttribute('data-content');
+
+			document.getElementById('dataToView').textContent = content;
+		});
+	});
+</script>

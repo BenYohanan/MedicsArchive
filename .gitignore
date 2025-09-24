@@ -1,0 +1,14 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/MedicsArchive/CopilotIndices/17.14.1204.46620
+/.vs/MedicsArchives/CopilotIndices/17.14.1204.46620
+/.vs/MedicsArchive/FileContentIndex
+/.vs
+/Data/bin/Debug/net8.0
+/Data/obj
+/MedicsArchive/bin/Debug/net8.0
+/MedicsArchive/obj
+/Service/bin/Debug/net8.0
+/Service/obj
