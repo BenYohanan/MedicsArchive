@@ -11,6 +11,7 @@ public static class ServiceExtensions
     {
         services.AddScoped<IReportHelper, ReportHelper>();
         services.AddScoped<IUserHelper, UserHelper>();
+        services.AddScoped<IOpenAIService, OpenAIService>();
         return services;
     }
 

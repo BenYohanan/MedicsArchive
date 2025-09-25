@@ -1,5 +1,6 @@
 ﻿using Data.DbContext;
 using Data.Models;
+using Data.ViewModels;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 
@@ -36,7 +37,7 @@ namespace Service.Helpers
 				Conclusion = r.Conclusion,
 				Exam = r.Exam,
 				StudyDate = r.StudyDate.Value.ToString("dd/MMM/yyyy"),
-				StudyDescription = r.StudyDescription,
+				Findings = r.StudyDescription,
 				Age = r.Age,
 				Institution = r.Institution,
 				IsApproved = r.IsApproved,
@@ -62,7 +63,7 @@ namespace Service.Helpers
 				PatientName = r.PatientName,
 				DOB = DateTime.Parse(r.DOB),
 				Sex = r.Sex,
-				StudyDescription = r.StudyDescription,
+				StudyDescription = r.Findings,
 				StudyDate = DateTime.Parse(r.StudyDate),
 				Exam = r.Exam,
 				ClinicalInformation = r.ClinicalInformation,
@@ -134,7 +135,7 @@ namespace Service.Helpers
 			{
 				PatientID = ExtractField("Patient ID:"),
 				DOB = ExtractField("DOB:"),
-				StudyDescription = ExtractField("Study Description:"),
+				Findings = ExtractField("Study Description:"),
 				PatientName = ExtractField("Patient Name:"),
 				Sex = ExtractField("Sex:"),
 				StudyDate = ExtractField("Study Date:"),

@@ -11,16 +11,18 @@ namespace MedicsArchive.Controllers
 	public class ReportController : Controller
 	{
 		public readonly IReportHelper reportHelper;
+		public readonly IOpenAIService openAIService;
 		public readonly IUserHelper _userHelper;
 		public readonly AppDbContext _appDbContext;
-		public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext)
-		{
-			this.reportHelper = reportHelper;
-			_userHelper = userHelper;
-			_appDbContext = appDbContext;
-		}
+        public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext, IOpenAIService openAIService)
+        {
+            this.reportHelper = reportHelper;
+            _userHelper = userHelper;
+            _appDbContext = appDbContext;
+            this.openAIService = openAIService;
+        }
 
-		[HttpGet]
+        [HttpGet]
 		public IActionResult Index()
 		{
 			var isAdmin = User.IsInRole(SeedItems.AdminRole);
@@ -52,7 +54,8 @@ namespace MedicsArchive.Controllers
 					filePaths.Add(filePath);
 				}
 
-				var isSaved = reportHelper.ExtractPatientDataFromPdfs(filePaths, isAdmin);
+				var isSaved = await openAIService.ExtractPatientDataFromFilesAsync(filePaths, isAdmin).ConfigureAwait(false);
+				//var isSaved = reportHelper.ExtractPatientDataFromPdfs(filePaths, isAdmin);
 				var msg = isAdmin ? "All files processed successfully!" : "All files processed successfully, admin will approve when verified";
 				foreach (var filePath in filePaths)
 				{

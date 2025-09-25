@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Data.Models.ReportViewModel>
+﻿@model IEnumerable<Data.ViewModels.ReportViewModel>
 @{
 	ViewData["Title"] = "Results";
 	Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -45,6 +45,8 @@
 								<th>Study Date</th>
 								<th>Study Name</th>
 								<th>Clinical Information</th>
+								<th>Findings</th>
+								<th>Conclusion</th>
 								@if (isAdmin)
 								{
 									<th></th>
@@ -57,8 +59,9 @@
 								@foreach (var report in Model)
 								{
 									var conclusion = report.Conclusion;
-									var studyDescription = report.StudyDescription;
 									var exam = report.Exam;
+									var clinicalInformation = report.ClinicalInformation;
+									var findings = report.Findings;
 									var patientName = isAdmin ? @report.PatientName : "*********";
 									<tr>
 										<td>
@@ -81,21 +84,49 @@
 										</td>
 										<td>@report.StudyDate</td>
 										<td>
-											@if (!string.IsNullOrEmpty(studyDescription))
+											@if (!string.IsNullOrEmpty(exam))
 											{
-												var shortText = studyDescription.Length > 20
-												? studyDescription.Substring(0, 20) + "..."
-												: studyDescription;
+												var shortText = exam.Length > 20
+												? exam.Substring(0, 20) + "..."
+												: exam;
 
 												<div class="d-flex align-items-center">
 													<p class="fs-14 fw-medium d-flex align-items-center mb-0">@shortText</p>
 													<a href="#" class="ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
-													   title="@studyDescription">
+													   title="@exam">
 														<i class="ti ti-info-circle text-info" style="color:#F37438 !important;"></i>
 													</a>
 												</div>
 											}
 										</td>
+										<td>
+											@if (!string.IsNullOrEmpty(clinicalInformation))
+											{
+												var shortText = clinicalInformation.Length > 20
+												? clinicalInformation.Substring(0, 20) + "..."
+												: clinicalInformation;
+
+												<div class="d-flex align-items-center">
+													<p class="fs-14 fw-medium d-flex align-items-center mb-0">@shortText</p>
+													<a href="#" class="ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
+													   title="@clinicalInformation">
+														<i class="ti ti-info-circle text-info" style="color:#F37438 !important;"></i>
+													</a>
+												</div>
+											}
+										</td>
+										
+										<td>
+											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@findings">
+												@if (!string.IsNullOrEmpty(findings))
+												{
+													@Html.Raw(findings.Length > 20
+																				? $"{findings.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
+																				: findings)
+												}
+											</a>
+										</td>
+
 										<td>
 											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@conclusion">
 												@if (!string.IsNullOrEmpty(conclusion))
@@ -103,7 +134,7 @@
 													@Html.Raw(conclusion.Length > 20
 																				? $"{conclusion.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
 																				: conclusion)
-																				}
+												}
 											</a>
 										</td>
 										
