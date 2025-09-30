@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Hangfire;
+using Hangfire.Dashboard;
+using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Service.Helpers;
+using System.Security.Claims;
 
 public static class ServiceExtensions
 {
@@ -12,15 +16,8 @@ public static class ServiceExtensions
         services.AddScoped<IReportHelper, ReportHelper>();
         services.AddScoped<IUserHelper, UserHelper>();
         services.AddScoped<IOpenAIService, OpenAIService>();
-        return services;
-    }
-
-    public static IServiceCollection ConfigureAppSettings(this IServiceCollection services, IConfiguration configuration)
-    {
-        //services.AddSingleton<IWebConfigurations>(configuration.GetSection("WebConfigurations").Get<WebConfigurations>());
-        //services.AddSingleton<IEmailConfiguration>(configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>());
-        //services.AddSingleton<IGeneralConfiguration>(configuration.GetSection("GeneralConfiguration").Get<GeneralConfiguration>());
-
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IEmailTemplateService, EmailTemplateService>();
         return services;
     }
 
@@ -44,6 +41,35 @@ public static class ServiceExtensions
         });
 
         return services;
+    }
+    public class MyAuthorizationFilter : IDashboardAuthorizationFilter
+    {
+        public bool Authorize(DashboardContext context)
+        {
+            var user = context.GetHttpContext().User;
+            return user != null && user.Identity.IsAuthenticated && user.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "SuperAdmin");
+        }
+    }
+
+    public static IApplicationBuilder UseHangfireConfiguration(this IApplicationBuilder app)
+    {
+        var options = new BackgroundJobServerOptions
+        {
+            ServerName = $"{Environment.MachineName}.{Guid.NewGuid()}"
+        };
+
+        app.UseHangfireServer(options);
+
+        var robotStorage = new SqlServerStorage(app.ApplicationServices.GetService<IConfiguration>().GetConnectionString("DBConnectionHangFire"));
+        JobStorage.Current = robotStorage;
+
+        var dashboardOptions = new DashboardOptions
+        {
+            Authorization = new[] { new MyAuthorizationFilter() }
+        };
+        app.UseHangfireDashboard("/MedicsHangFire", dashboardOptions, robotStorage);
+
+        return app;
     }
 
 }

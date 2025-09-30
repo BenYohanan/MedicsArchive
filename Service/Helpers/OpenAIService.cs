@@ -64,7 +64,7 @@ namespace Service.Helpers
                         DateTime.ParseExact(r.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
                         DateTime.ParseExact(r.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture)),
                     Institution = r.Institution,
-                    IsApproved = isAdmin,
+                    Status = isAdmin ? Status.Approved : Status.Pending,
                 }).ToList();
 
                 _db.AddRange(reports);
@@ -166,7 +166,7 @@ namespace Service.Helpers
             }
             return text.ToString().Trim();
         }
-
+        
         private async Task<ReportViewModel?> ParsePatientInfoAsync(string text)
         {
             string systemPrompt = "You are a helpful assistant that extracts structured patient data from text.";

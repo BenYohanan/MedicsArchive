@@ -54,7 +54,7 @@ namespace Data.DbContext
 		public static string SuperAdminRole = "SuperAdmin";
 		public static string UserRole = "User";
 		public static string SuperAdminDashboard = "/SuperAdmin/Home";
-		public static string AdminDashboard = "/Report/Index";
+		public static string AdminDashboard = "/Admin/Index";
 		public static string UserDashboard = "/Report/Index";
 
 		public static IList<ApplicationUser> DefaultUsers()

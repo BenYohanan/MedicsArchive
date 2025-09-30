@@ -25,7 +25,7 @@ namespace Service.Helpers
 			var query = db.Reports.Where(x => x.Active).AsQueryable();
 			if (!isAdmin)
 			{
-				query = query.Where(x => x.IsApproved).AsQueryable();
+				query = query.Where(x => x.Status != Status.Rejected).AsQueryable();
 			}
 			return query.OrderByDescending(x=>x.DateCreated).Select(r=> new ReportViewModel
 			{
@@ -37,10 +37,11 @@ namespace Service.Helpers
 				Conclusion = r.Conclusion,
 				Exam = r.Exam,
 				StudyDate = r.StudyDate.Value.ToString("dd/MMM/yyyy"),
+                DateCreated = r.DateCreated.Value.ToString("dd/MMM/yyyy"),
 				Findings = r.StudyDescription,
 				Age = r.Age,
 				Institution = r.Institution,
-				IsApproved = r.IsApproved,
+                Status = r.Status,
 				Id = r.Id
 			}).ToList();
 		}
@@ -70,7 +71,7 @@ namespace Service.Helpers
 				Conclusion = r.Conclusion,
 				Age = CalculateAge(DateTime.Parse(r.DOB), DateTime.Parse(r.StudyDate)),
 				Institution = r.Institution,
-				IsApproved = isAdmin,
+				Status = isAdmin ? Status.Approved : Status.Pending,
 			}).ToList();
 
 			db.AddRange(reports);

@@ -125,35 +125,7 @@ function registerUser() {
 function loadReportId(reportId) {
 	$("#reportId, #reportIdForDelete").val(reportId);
 }
-function approveReport() {
-	var defaultBtnValue = $('#aprrove_btn').html();
-	$('#aprrove_btn').html("Please wait...");
-	$('#aprrove_btn').attr("disabled", true);
-	var reportId = $('#reportId').val();
-	$.ajax({
-		type: 'Post',
-		url: '/Report/Approve',
-		dataType: 'json',
-		data:
-		{
-			reportId: reportId
-		},
-		success: function (result) {
-			if (!result.isError) {
-				var url = location.href;
-				newSuccessAlert(result.msg, url);
-				$('#aprrove_btn').html(defaultBtnValue);
-			} else {
-				$('#aprrove_btn').html(defaultBtnValue);
-				$('#aprrove_btn').attr("disabled", false);
-				errorAlert(result.msg);
-			}
-		},
-		error: function (ex) {
-			errorAlert("An error has occurred, try again. Please contact support if the error persists");
-		}
-	});
-}
+
 function deleteReport() {
 	var defaultBtnValue = $('#dlt_btn').html();
 	$('#dlt_btn').html("Please wait...");
@@ -175,6 +147,37 @@ function deleteReport() {
 			} else {
 				$('#dlt_btn').html(defaultBtnValue);
 				$('#dlt_btn').attr("disabled", false);
+				errorAlert(result.msg);
+			}
+		},
+		error: function (ex) {
+			errorAlert("An error has occurred, try again. Please contact support if the error persists");
+		}
+	});
+}
+function rejectAcceptReport(isAccept) {
+	var btnId = isAccept ? '#aprrove_btn' : '#reject_btn';
+	var defaultBtnValue = $(btnId).html();
+	$(btnId).html("Please wait...");
+	$(btnId).attr("disabled", true);
+	var reportId = $('#reportId').val();
+	$.ajax({
+		type: 'Post',
+		url: '/Report/DecideResultStatus',
+		dataType: 'json',
+		data:
+		{
+			reportId: reportId,
+            isAccept: isAccept
+		},
+		success: function (result) {
+			if (!result.isError) {
+				var url = location.href;
+				newSuccessAlert(result.msg, url);
+				$(btnId).html(defaultBtnValue);
+			} else {
+				$(btnId).html(defaultBtnValue);
+				$(btnId).attr("disabled", false);
 				errorAlert(result.msg);
 			}
 		},

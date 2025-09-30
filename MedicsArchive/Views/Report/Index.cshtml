@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Data.ViewModels.ReportViewModel>
+﻿@using Data.Models
+@model IEnumerable<Data.ViewModels.ReportViewModel>
 @{
 	ViewData["Title"] = "Results";
 	Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -143,7 +144,7 @@
 											<td>
 												<div class="action-icon d-inline-flex">
 													<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_report" onclick="loadReportId('@report.Id')"><i class="ti ti-trash"></i></a>
-													@if (report.IsApproved)
+													@if (report.Status == Status.Approved)
 													{
 														<a href="javascript:void(0);" class="ms-2" title="Approved">
 															<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
@@ -151,7 +152,9 @@
 													}
 													else
 													{
-														<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
+														@* <a href="#" class="me-2" data-bs-toggle="modal" data-bs-target="#edit_leaves" onclick="loadReportId('@report.Id')"><i class="ti ti-edit"></i></a> *@
+														<a href="#" class="me-2" data-bs-toggle="modal" data-bs-target="#reject_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-down"></i></a>
+														<a href="#" class="me-2" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
 													}
 												</div>
 											</td>
@@ -244,13 +247,33 @@
 				<p class="mb-3">Are you sure want to approve this report?</p>
 				<div class="d-flex justify-content-center">
 					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
-					<a href="#" class="btn btn-success" id="aprrove_btn" onclick="approveReport()">Yes, Approve</a>
+					<a href="#" class="btn btn-success" id="aprrove_btn" onclick="rejectAcceptReport(true)">Yes, Approve</a>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
 <!-- /Approve Modal -->
+<!-- Reject Modal -->
+<div class="modal fade" id="reject_modal">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-body text-center">
+				<input id="reportId" hidden />
+				<span class="avatar avatar-xl bg-transparent-warning text-warning mb-3">
+					<i class="ti ti-trash-x fs-36"></i>
+				</span>
+				<h4 class="mb-1">Confirm Reject</h4>
+				<p class="mb-3">Are you sure want to reject this report?</p>
+				<div class="d-flex justify-content-center">
+					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
+					<a href="#" class="btn btn-warning" id="reject_btn" onclick="rejectAcceptReport(false)">Yes, Reject</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- /Reject Modal -->
 
 <script>
 	document.addEventListener('DOMContentLoaded', function () {

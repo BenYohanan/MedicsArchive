@@ -1,4 +1,5 @@
 ﻿using Data.DbContext;
+using Data.Models;
 using Data.ViewModels;
 using MedicsArchive.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -14,12 +15,14 @@ namespace MedicsArchive.Controllers
 		public readonly IOpenAIService openAIService;
 		public readonly IUserHelper _userHelper;
 		public readonly AppDbContext _appDbContext;
-        public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext, IOpenAIService openAIService)
+		public readonly IEmailTemplateService _emailTemplateService;
+        public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext, IOpenAIService openAIService, IEmailTemplateService emailTemplateService)
         {
             this.reportHelper = reportHelper;
             _userHelper = userHelper;
             _appDbContext = appDbContext;
             this.openAIService = openAIService;
+            _emailTemplateService = emailTemplateService;
         }
 
         [HttpGet]
@@ -99,31 +102,43 @@ namespace MedicsArchive.Controllers
 			{
 				return ResponseHelper.ErrorMsg();
 			}
-			//Email user his login credentials and deactivate after 72 hours
-			return ResponseHelper.JsonSuccess("User registered successfully");
+			_emailTemplateService.SendRegistrationEmail(user);
+            return ResponseHelper.JsonSuccess("User registered successfully");
 		}
-		[HttpPost]
-		public JsonResult Approve(long reportId)
-		{
-			if (reportId <= 0)
-			{
-				return ResponseHelper.ErrorMsg();
-			}
+		
+        [HttpPost]
+        public JsonResult DecideResultStatus(long reportId, bool isAccept)
+        {
+            if (reportId <= 0)
+            {
+                return ResponseHelper.ErrorMsg();
+            }
+			var status = isAccept ? Status.Approved : Status.Rejected;
 
-			int rowsAffected = _appDbContext.Reports
-				.Where(r => r.Id == reportId && r.Active)
-				.ExecuteUpdate(update => update
-					.SetProperty(r => r.IsApproved, true)
-				);
+            int rowsAffected = _appDbContext.Reports
+                .Where(r => r.Id == reportId && r.Active)
+                .ExecuteUpdate(update => update
+                    .SetProperty(r => r.Status, status)
+                );
 
-			if (rowsAffected == 0)
-			{
-				return ResponseHelper.JsonError("Unable to approve");
-			}
+            if (rowsAffected == 0)
+            {
+                return ResponseHelper.JsonError("Unable to approve");
+            }
 
-			return ResponseHelper.JsonSuccess("Report approved successfully.");
-		}
-		[HttpPost]
+			var user = _appDbContext.Reports.Include(r => r.User).FirstOrDefault(r => r.Id == reportId)?.User;
+            if (isAccept)
+            {
+                _emailTemplateService.SendReportApprovalEmail(user);
+            }
+            else
+            {
+                _emailTemplateService.SendReportRejectionEmail(user);
+            }
+
+            return ResponseHelper.JsonSuccess($"Report {(isAccept ? "approved" : "rejected")} successfully.");
+        }
+        [HttpPost]
 		public JsonResult Delete(long reportId)
 		{
 			if (reportId <= 0)

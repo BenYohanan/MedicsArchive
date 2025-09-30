@@ -1,5 +1,7 @@
 ﻿@{
 	var randomStr = DateTime.Now.ToString().ToLower().Replace(":", "").Replace("pm", "").Replace("am", "");
+
+	var profileType = User.IsInRole("Admin") ? "Admin" : "User";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -270,8 +272,11 @@
 
 		<!-- Sidebar -->
 		<div class="sidebar" id="sidebar">
+			<div class="sidebar-logo">
+				<h4 style="color:#F37438;">Medics Archive</h4>
+			</div>
 			<div class="sidebar-inner slimscroll">
-				<div id="sidebar-menu" style="margin-top:30px !important;" class="sidebar-menu">
+				<div id="sidebar-menu" class="sidebar-menu">
 					<ul>
 						<li class="menu-title"><span>MAIN MENU</span></li>
 						<li>
@@ -291,12 +296,14 @@
 										<i class="ti ti-box"></i><span>Results</span>
 									</a>
 								</li>
-								<li>
-									<a asp-action="Researcher" asp-controller="Report">
-										<i class="ti ti-users-group"></i><span>Researchers</span>
-									</a>
-								</li>
-								
+								@if (profileType != "User")
+								{
+									<li>
+										<a asp-action="Researcher" asp-controller="Report">
+											<i class="ti ti-users-group"></i><span>Researchers</span>
+										</a>
+									</li>
+								}
 							</ul>
 						</li>
 					</ul>
