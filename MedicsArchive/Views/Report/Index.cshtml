@@ -48,10 +48,7 @@
 								<th>Clinical Information</th>
 								<th>Findings</th>
 								<th>Conclusion</th>
-								@if (isAdmin)
-								{
-									<th></th>
-								}
+								<th></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -157,6 +154,17 @@
 														<a href="#" class="me-2" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
 													}
 													<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_report" onclick="loadReportId('@report.Id')"><i class="ti ti-trash"></i></a>
+												</div>
+											</td>
+										}
+										else
+										{
+											<td>
+												<div class="action-icon d-inline-flex">
+													<a href="#" class="me-2" onclick="loadReportId('@report.Id')"><i class="ti ti-download"></i></a>
+													<a href="javascript:void(0);" class="me-2" title="Approved">
+														<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
+													</a>
 												</div>
 											</td>
 										}
