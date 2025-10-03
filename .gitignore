@@ -12,3 +12,7 @@
 /MedicsArchive/obj
 /Service/bin/Debug/net8.0
 /Service/obj
+/Data/bin/Release/net8.0
+/MedicsArchive/bin/Release/net8.0
+/Service/bin/Release/net8.0
+/MedicsArchive/Properties/PublishProfiles

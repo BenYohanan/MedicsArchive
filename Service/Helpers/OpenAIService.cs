@@ -17,7 +17,7 @@ namespace Service.Helpers
 {
     public interface IOpenAIService
     {
-        Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin);
+        Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId);
     }
     public class OpenAIService: IOpenAIService
     {
@@ -34,7 +34,7 @@ namespace Service.Helpers
             _apiKey = configuration["OpenAI:ApiKey"];
         }
 
-        public async Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin)
+        public async Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId)
         {
             try
             {
@@ -65,6 +65,7 @@ namespace Service.Helpers
                         DateTime.ParseExact(r.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture)),
                     Institution = r.Institution,
                     Status = isAdmin ? Status.Approved : Status.Pending,
+                    UserId = userId
                 }).ToList();
 
                 _db.AddRange(reports);

@@ -281,11 +281,22 @@
 						<li class="menu-title"><span>MAIN MENU</span></li>
 						<li>
 							<ul>
-								<li class="submenu">
-									<a href="javascript:void(0);">
-										<i class="ti ti-smart-home"></i><span>Dashboard</span>
-									</a>
-								</li>
+								@if (profileType == "Admin")
+								{
+									<li>
+										<a asp-action="Index" asp-controller="Admin">
+											<i class="ti ti-smart-home"></i><span>Dashboard</span>
+										</a>
+									</li>
+								}
+								else
+								{
+									<li>
+										<a asp-action="Index" asp-controller="User">
+											<i class="ti ti-smart-home"></i><span>Dashboard</span>
+										</a>
+									</li>
+								}
 							</ul>
 						</li>
 						<li class="menu-title"><span>Report Center</span></li>

@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace Data.Models
 {
@@ -22,8 +18,11 @@ namespace Data.Models
 
 	public enum PassWordType
 	{
-		TwoWeeks,
-		OneWeek,
-		DoNotExpire
+        [Description("Two Weeks")]
+        TwoWeeks,
+        [Description("One Weeks")]
+        OneWeek,
+        [Description("Life Time")]
+        DoNotExpire
 	}
 }

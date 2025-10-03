@@ -44,6 +44,7 @@
 								<th>Full Name</th>
 								<th>Email</th>
 								<th>Phone Number</th>
+								<th>Access Duration</th>
 								<th></th>
 							</tr>
 						</thead>
@@ -57,8 +58,11 @@
 										<td>@applicationUser.FullName</td>
 										<td>@applicationUser.Email</td>
 										<td>@applicationUser.PhoneNumber</td>
+										<td>@applicationUser.PassWordTypeDescription</td>
 										<td>
 											<div class="action-icon d-inline-flex">
+												<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_modal"><i class="ti ti-edit"></i></a>
+												<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#change_password_access_modal"><i class="ti ti-lock-open"></i></a>
 												<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_modal"><i class="ti ti-trash"></i></a>
 											</div>
 										</td>

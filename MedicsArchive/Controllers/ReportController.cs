@@ -46,7 +46,12 @@ namespace MedicsArchive.Controllers
 
 			try
 			{
-				foreach (var file in files)
+				var user =await _userHelper.FindByEmailAsync(User.Identity.Name).ConfigureAwait(false);
+				if (user == null)
+				{
+					return ResponseHelper.ErrorMsg();
+                }
+				foreach(var file in files)
 				{
 					var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
 					var filePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
@@ -57,7 +62,7 @@ namespace MedicsArchive.Controllers
 					filePaths.Add(filePath);
 				}
 
-				var isSaved = await openAIService.ExtractPatientDataFromFilesAsync(filePaths, isAdmin).ConfigureAwait(false);
+				var isSaved = await openAIService.ExtractPatientDataFromFilesAsync(filePaths, isAdmin, user.Id).ConfigureAwait(false);
 				//var isSaved = reportHelper.ExtractPatientDataFromPdfs(filePaths, isAdmin);
 				var msg = isAdmin ? "All files processed successfully!" : "All files processed successfully, admin will approve when verified";
 				foreach (var filePath in filePaths)

@@ -27,12 +27,12 @@ namespace MedicsArchive.Controllers
             var data = new AdminDashboardDTO
             {
                 UserName = @User.FindFirst("FullName")?.Value,
-                AllResultCount = reports.Count,
+                AllResultCount = reports.Count(x => x.Status == Status.Approved),
                 PendingResultCount = reports.Count(x => x.Status == Status.Pending),
                 RejectedResultCount = reports.Count(x => x.Status == Status.Rejected),
                 ClientCount = _userHelper.GetUsers().Count,
-                Reports = reports.Where(x => x.Status != Status.Rejected).Take(5).ToList(),
-                PendingReports = reports.Where(x => x.Status == Status.Pending).Take(5).ToList()
+                Reports = [.. reports.Where(x => x.Status != Status.Rejected && x.Status != Status.Pending).Take(5)],
+                PendingReports = [.. reports.Where(x => x.Status == Status.Pending).Take(5)]
             };
             return View(data);
         }
