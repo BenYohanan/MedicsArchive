@@ -36,49 +36,53 @@ namespace Service.Helpers
 
         public async Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId)
         {
-            try
-            {
-                var patientInfos = new List<ReportViewModel>();
+            bool anySuccess = false;
 
-                foreach (var filePath in filePaths)
+            foreach (var filePath in filePaths)
+            {
+                try
                 {
                     var patientInfo = await ExtractPatientDataAsync(filePath);
-                    if (patientInfo != null)
+                    if (patientInfo == null)
                     {
-                        patientInfos.Add(patientInfo);
+                        _logger.LogWarning($"No data extracted from file: {filePath}");
+                        continue;
                     }
+
+                    var report = new Report
+                    {
+                        PatientID = patientInfo.PatientID,
+                        PatientName = patientInfo.PatientName,
+                        DOB = DateTime.ParseExact(patientInfo.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
+                        Sex = patientInfo.Sex,
+                        StudyDescription = patientInfo.Findings,
+                        StudyDate = DateTime.ParseExact(patientInfo.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture),
+                        Exam = patientInfo.Exam,
+                        ClinicalInformation = patientInfo.ClinicalInformation,
+                        Conclusion = patientInfo.Conclusion,
+                        Age = CalculateAge(
+                            DateTime.ParseExact(patientInfo.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
+                            DateTime.ParseExact(patientInfo.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture)),
+                        Institution = patientInfo.Institution,
+                        Status = isAdmin ? Status.Approved : Status.Pending,
+                        UserId = userId
+                    };
+
+                    _db.Reports.Add(report);
+                    await _db.SaveChangesAsync();
+
+                    _logger.LogInformation($"✅ Successfully saved report for file: {filePath}");
+                    anySuccess = true;
                 }
-
-                var reports = patientInfos.Select(r => new Report
+                catch (Exception ex)
                 {
-                    PatientID = r.PatientID,
-                    PatientName = r.PatientName,
-                    DOB = DateTime.ParseExact(r.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
-                    Sex = r.Sex,
-                    StudyDescription = r.Findings,
-                    StudyDate = DateTime.ParseExact(r.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture),
-                    Exam = r.Exam,
-                    ClinicalInformation = r.ClinicalInformation,
-                    Conclusion = r.Conclusion,
-                    Age = CalculateAge(
-                        DateTime.ParseExact(r.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
-                        DateTime.ParseExact(r.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture)),
-                    Institution = r.Institution,
-                    Status = isAdmin ? Status.Approved : Status.Pending,
-                    UserId = userId
-                }).ToList();
-
-                _db.AddRange(reports);
-                _db.SaveChanges();
-                return true;
+                    _logger.LogError(ex, $"❌ Failed to process file: {filePath}");
+                }
             }
-            catch (Exception ex)
-            {
 
-                throw ex;
-            }
-            
+            return anySuccess;
         }
+
 
         private int CalculateAge(DateTime dob, DateTime studyDate)
         {

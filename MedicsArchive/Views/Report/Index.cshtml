@@ -6,7 +6,9 @@
 	var isAdmin = ViewBag.IsAdmin;
 }
 <style>
-
+	.hide-important {
+		display: none !important;
+	}
 	body {
 		counter-reset: Serial; /* / Set the Serial counter to 0 /*/
 	}
@@ -31,6 +33,50 @@
 		</div>
 
 		<div class="card">
+			<div class="card mb-3">
+				<div class="card-body">
+					<div class="row align-items-end">
+						<div class="col-md-3">
+							<label class="form-label">Age Range</label>
+							<div class="d-flex gap-2">
+								<input type="number" id="minAge" class="form-control" placeholder="Min Age" />
+								<input type="number" id="maxAge" class="form-control" placeholder="Max Age" />
+							</div>
+						</div>
+
+						<div class="col-md-3">
+							<label class="form-label">Study Date From</label>
+							<input type="date" id="studyDateFrom" class="form-control" />
+						</div>
+
+						<div class="col-md-3">
+							<label class="form-label">Study Date To</label>
+							<input type="date" id="studyDateTo" class="form-control" />
+						</div>
+
+						<div class="col-md-3 d-flex justify-content-start gap-2">
+							<button class="btn btn-primary" id="filterBtn"><i class="ti ti-filter"></i> Filter</button>
+							<button class="btn btn-light" id="resetBtn"><i class="ti ti-restore"></i> Reset</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div id="bulkActions" class="d-flex justify-content-end mb-3 hide-important" style="padding-right: 20px;">
+				<button class="btn btn-success me-2" id="bulkApprove">
+					<i class="fa fa-thumbs-up me-1"></i> Approve Selected
+				</button>
+				<button class="btn btn-warning me-2" id="bulkReject">
+					<i class="fa fa-thumbs-down me-1"></i> Reject Selected
+				</button>
+				<button class="btn btn-info me-2" id="bulkDownload">
+					<i class="fa fa-download me-1"></i> Download Selected
+				</button>
+				<button class="btn btn-danger" id="bulkDelete">
+					<i class="fa fa-trash me-1"></i> Delete Selected
+				</button>
+			</div>
+
 			<div class="card-body p-0">
 				<div class="custom-datatable-filter table-responsive">
 					<table class="table datatable">
@@ -43,6 +89,7 @@
 								</th>
 								<th>Company</th>
 								<th>Patient Details</th>
+								<th>Date Uploaded</th>
 								<th>Study Date</th>
 								<th>Study Name</th>
 								<th>Clinical Information</th>
@@ -65,7 +112,7 @@
 									<tr>
 										<td>
 											<div class="form-check form-check-md">
-												<input class="form-check-input" type="checkbox">
+												<input class="form-check-input row-checkbox" type="checkbox" value="@report.Id">
 											</div>
 										</td>
 										<td>@report.Institution</td>
@@ -81,6 +128,7 @@
 												</div>
 											</div>
 										</td>
+										<td>@report.DateCreated</td>
 										<td>@report.StudyDate</td>
 										<td>
 											@if (!string.IsNullOrEmpty(exam))
@@ -99,20 +147,14 @@
 											}
 										</td>
 										<td>
-											@if (!string.IsNullOrEmpty(clinicalInformation))
-											{
-												var shortText = clinicalInformation.Length > 20
-												? clinicalInformation.Substring(0, 20) + "..."
-												: clinicalInformation;
-
-												<div class="d-flex align-items-center">
-													<p class="fs-14 fw-medium d-flex align-items-center mb-0">@shortText</p>
-													<a href="#" class="ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
-													   title="@clinicalInformation">
-														<i class="ti ti-info-circle text-info" style="color:#F37438 !important;"></i>
-													</a>
-												</div>
-											}
+											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@clinicalInformation">
+												@if (!string.IsNullOrEmpty(clinicalInformation))
+												{
+													@Html.Raw(clinicalInformation.Length > 20
+																				? $"{clinicalInformation.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
+																				: clinicalInformation)
+												}
+											</a>
 										</td>
 										
 										<td>
@@ -195,32 +237,7 @@
 	</div>
 </div>
 
-<div class="modal fade" id="add_report">
-	<div class="modal-dialog modal-dialog-centered modal-md">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="modal-title">Upload Files</h4>
-				<button type="button" class="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
-					<i class="ti ti-x"></i>
-				</button>
-			</div>
-			<div class="modal-body pb-0">
-				<div class="row">
-					<div class="col-md-12">
-						<div class="mb-3">
-							<label class="form-label">Choose file(s)</label>
-							<input type="file" class="form-control" id="files" name="files" multiple />
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
-				<button type="submit" onclick="saveReport(@isAdmin.ToString().ToLower())" id="submit_btn" class="btn btn-primary">Upload</button>
-			</div>
-		</div>
-	</div>
-</div>
+@await Html.PartialAsync("_AddReportModal", (bool)isAdmin)
 
 <!-- Delete Modal -->
 <div class="modal fade" id="delete_report">
@@ -284,6 +301,7 @@
 </div>
 <!-- /Reject Modal -->
 
+<script src="~/template/assets/js/jquery-3.7.1.min.js"></script>
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
 		var viewModal = document.getElementById('view_data');
@@ -293,6 +311,37 @@
 			var content = triggerLink.getAttribute('data-content');
 
 			document.getElementById('dataToView').textContent = content;
+		});
+	});
+	$(document).ready(function () {
+		function toggleBulkActions() {
+			const anyChecked = $('.row-checkbox:checked').length > 0;
+
+			if (anyChecked) {
+				$('#bulkActions').removeClass('hide-important');
+			} else {
+				$('#bulkActions').addClass('hide-important');
+			}
+		}
+
+		// When "Select All" is clicked
+		$('#select-all').on('change', function () {
+			$('.row-checkbox').prop('checked', this.checked);
+			toggleBulkActions();
+		});
+
+		// When any row checkbox changes
+		$(document).on('change', '.row-checkbox', function () {
+			const allChecked = $('.row-checkbox').length === $('.row-checkbox:checked').length;
+			$('#select-all').prop('checked', allChecked);
+			toggleBulkActions();
+		});
+
+		// Hide bulk actions after bulk operation
+		$('#bulkApprove, #bulkReject, #bulkDownload, #bulkDelete').on('click', function () {
+			$('#bulkActions').addClass('hide-important');
+			$('#select-all').prop('checked', false);
+			$('.row-checkbox').prop('checked', false);
 		});
 	});
 </script>

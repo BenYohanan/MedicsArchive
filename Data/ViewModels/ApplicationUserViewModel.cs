@@ -17,7 +17,9 @@ namespace Data.ViewModels
         public string? PhoneNumber { get; set; }
         public DateTime? DateRegistered { get; set; }
         public PassWordType PassWordType { get; set; }
-
+        public bool IsPasswordExpired { get; set; }
+        public bool IsExtended { get; set; }
+        public DateTime? PasswordExpiryDate { get; set; }
         public string PassWordTypeDescription
         {
             get

@@ -22,54 +22,36 @@ namespace MedicsArchive.Controllers
 		{
 			return View();
 		}
+
         [HttpPost]
         public async Task<JsonResult> Login(string emailorphone, string password)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(emailorphone) || string.IsNullOrWhiteSpace(password))
-                {
                     return ResponseHelper.JsonError("Please fill the form correctly");
-                }
 
                 var filterSpace = emailorphone.Replace(" ", "");
-
                 var user = await _userHelper.FindByEmailAsync(filterSpace).ConfigureAwait(false);
+
                 if (user == null)
-                {
                     return ResponseHelper.JsonError("Invalid detail or account does not exist, contact your Admin");
-                }
 
                 var userRoles = (List<string>)await _userManager.GetRolesAsync(user).ConfigureAwait(false);
 
-                var userPasswordType = user.PassWordType;
-                if (userPasswordType != PassWordType.DoNotExpire && userRoles.Contains("user", StringComparer.OrdinalIgnoreCase))
+                if (user.PassWordType != PassWordType.DoNotExpire && userRoles.Contains("user", StringComparer.OrdinalIgnoreCase))
                 {
-                    var creationDate = user.DateRegistered;
-                    if (creationDate.HasValue)
+                    if (user.PasswordExpiryDate.HasValue && DateTime.UtcNow > user.PasswordExpiryDate.Value)
                     {
-                        if (userPasswordType == PassWordType.TwoWeeks)
-                        {
-                            var timeElapsed = DateTime.UtcNow - creationDate.Value;
-                            if (timeElapsed.TotalHours > 336)
-                                return ResponseHelper.JsonError("Password expired. Contact admin");
-                        }
-                        if (userPasswordType == PassWordType.OneWeek)
-                        {
-                            var timeElapsed = DateTime.UtcNow - creationDate.Value;
-                            if (timeElapsed.TotalHours > 168)
-                                return ResponseHelper.JsonError("Password expired. Contact admin");
-                        }
+                        return ResponseHelper.JsonError("Password expired. Contact admin");
                     }
                 }
 
                 var result = await _signInManager.PasswordSignInAsync(user, password, true, lockoutOnFailure: false)
-                                                  .ConfigureAwait(false);
+                                                   .ConfigureAwait(false);
 
                 if (!result.Succeeded)
-                {
                     return ResponseHelper.JsonError("Invalid user name or password");
-                }
 
                 var claims = new List<Claim>
                 {

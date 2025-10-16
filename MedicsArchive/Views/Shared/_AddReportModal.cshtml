@@ -1,0 +1,54 @@
+﻿@model bool
+
+<div class="modal fade" id="add_report">
+	<div class="modal-dialog modal-dialog-centered modal-md">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Upload Files</h4>
+				<button type="button" class="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="modal-body pb-0">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="mb-3">
+							<label class="form-label">Choose file(s)</label>
+							<input type="file" class="form-control" id="files" name="files"
+								   accept=".pdf,.docx" multiple />
+							<small class="text-muted text-danger">You can upload up to 15 files (.pdf, .docx)</small>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+				<button type="submit"
+						onclick="saveReport(@Model.ToString().ToLower())"
+						id="submit_btn"
+						class="btn btn-primary">Upload</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	document.getElementById("files").addEventListener("change", function (event) {
+		const files = event.target.files;
+
+		if (files.length > 15) {
+			infoAlert("You can only upload up to 15 files at a time.");
+			event.target.value = "";
+			return;
+		}
+
+		for (const file of files) {
+			const fileType = file.name.split('.').pop().toLowerCase();
+			if (fileType !== "pdf" && fileType !== "docx") {
+				infoAlert("Only PDF and DOCX files are allowed.");
+				event.target.value = "";
+				return;
+			}
+		}
+	});
+</script>

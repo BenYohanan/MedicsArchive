@@ -27,23 +27,23 @@ namespace Service.Helpers
 			{
 				query = query.Where(x => x.Status != Status.Rejected).AsQueryable();
 			}
-			return query.OrderByDescending(x=>x.DateCreated).Select(r=> new ReportViewModel
+			return [.. query.OrderByDescending(x=>x.DateCreated).Select(r=> new ReportViewModel
 			{
 				PatientID = r.PatientID,
 				PatientName = r.PatientName,
-				DOB = r.DOB.Value.ToString("dd/MMM/yyyy"),
+				DOB = r.DOB.Value.ToString("dd/MM/yyyy"),
 				Sex = r.Sex,
 				ClinicalInformation = r.ClinicalInformation,
 				Conclusion = r.Conclusion,
 				Exam = r.Exam,
-				StudyDate = r.StudyDate.Value.ToString("dd/MMM/yyyy"),
-                DateCreated = r.DateCreated.Value.ToString("dd/MMM/yyyy"),
+				StudyDate = r.StudyDate.Value.ToString("dd/MM/yyyy"),
+                DateCreated = r.DateCreated.Value.ToString("dd/MM/yyyy"),
 				Findings = r.StudyDescription,
 				Age = r.Age,
 				Institution = r.Institution,
                 Status = r.Status,
 				Id = r.Id
-			}).ToList();
+			})];
 		}
 
 		public bool ExtractPatientDataFromPdfs(IEnumerable<string> filePaths, bool isAdmin)

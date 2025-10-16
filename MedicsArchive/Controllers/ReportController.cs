@@ -1,10 +1,8 @@
 ﻿using Data.DbContext;
 using Data.Models;
-using Data.ViewModels;
 using MedicsArchive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Service.Helpers;
 
 namespace MedicsArchive.Controllers
@@ -14,13 +12,13 @@ namespace MedicsArchive.Controllers
 		public readonly IReportHelper reportHelper;
 		public readonly IOpenAIService openAIService;
 		public readonly IUserHelper _userHelper;
-		public readonly AppDbContext _appDbContext;
+        public readonly AppDbContext _db;
 		public readonly IEmailTemplateService _emailTemplateService;
         public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext, IOpenAIService openAIService, IEmailTemplateService emailTemplateService)
         {
             this.reportHelper = reportHelper;
             _userHelper = userHelper;
-            _appDbContext = appDbContext;
+            _db = appDbContext;
             this.openAIService = openAIService;
             _emailTemplateService = emailTemplateService;
         }
@@ -46,7 +44,7 @@ namespace MedicsArchive.Controllers
 
 			try
 			{
-				var user =await _userHelper.FindByEmailAsync(User.Identity.Name).ConfigureAwait(false);
+				var user =await _userHelper.FindByUserNameAsync(User.Identity.Name).ConfigureAwait(false);
 				if (user == null)
 				{
 					return ResponseHelper.ErrorMsg();
@@ -63,52 +61,19 @@ namespace MedicsArchive.Controllers
 				}
 
 				var isSaved = await openAIService.ExtractPatientDataFromFilesAsync(filePaths, isAdmin, user.Id).ConfigureAwait(false);
-				//var isSaved = reportHelper.ExtractPatientDataFromPdfs(filePaths, isAdmin);
-				var msg = isAdmin ? "All files processed successfully!" : "All files processed successfully, admin will approve when verified";
+				var msg = isAdmin ? "✅ All files processed successfully!" : "✅All files processed successfully, admin will approve when verified";
 				foreach (var filePath in filePaths)
 				{
 					if (System.IO.File.Exists(filePath))
 						System.IO.File.Delete(filePath);
 				}
-				return isSaved ? ResponseHelper.JsonSuccess(msg) : ResponseHelper.JsonError("Unable to upload file, contance admin if error persit");
+				return isSaved ? ResponseHelper.JsonSuccess(msg) : ResponseHelper.JsonError("❌ Unable to upload file, contance admin if error persit");
 			}
 			catch (Exception ex)
 			{
 				return ResponseHelper.ErrorMsg();
 				throw;
 			}
-		}
-		[HttpGet]
-		public IActionResult Researcher()
-		{
-			var users = _userHelper.GetUsers();
-			return View(users);
-		}
-
-		[HttpPost]
-		public async Task<JsonResult> RegisterUser(string userData)
-		{
-			if (string.IsNullOrEmpty(userData))
-			{
-				return ResponseHelper.ErrorMsg();
-			}
-			var applicationUserViewModel = JsonConvert.DeserializeObject<ApplicationUserViewModel>(userData);
-			if (applicationUserViewModel == null)
-			{
-				return ResponseHelper.ErrorMsg();
-			}
-			var checkForUser = await _userHelper.FindByEmailAsync(applicationUserViewModel.Email).ConfigureAwait(false);
-			if (checkForUser != null)
-			{
-				return ResponseHelper.JsonError("Email already in use by another user");
-			}
-			var user = await _userHelper.RegisterUser(applicationUserViewModel).ConfigureAwait(false);
-			if (user == null)
-			{
-				return ResponseHelper.ErrorMsg();
-			}
-			_emailTemplateService.SendRegistrationEmail(user);
-            return ResponseHelper.JsonSuccess("User registered successfully");
 		}
 		
         [HttpPost]
@@ -120,7 +85,7 @@ namespace MedicsArchive.Controllers
             }
 			var status = isAccept ? Status.Approved : Status.Rejected;
 
-            int rowsAffected = _appDbContext.Reports
+            int rowsAffected = _db.Reports
                 .Where(r => r.Id == reportId && r.Active)
                 .ExecuteUpdate(update => update
                     .SetProperty(r => r.Status, status)
@@ -131,7 +96,7 @@ namespace MedicsArchive.Controllers
                 return ResponseHelper.JsonError("Unable to approve");
             }
 
-			var user = _appDbContext.Reports.Include(r => r.User).FirstOrDefault(r => r.Id == reportId)?.User;
+			var user = _db.Reports.Include(r => r.User).FirstOrDefault(r => r.Id == reportId)?.User;
             if (isAccept)
             {
                 _emailTemplateService.SendReportApprovalEmail(user);
@@ -143,6 +108,7 @@ namespace MedicsArchive.Controllers
 
             return ResponseHelper.JsonSuccess($"Report {(isAccept ? "approved" : "rejected")} successfully.");
         }
+
         [HttpPost]
 		public JsonResult Delete(long reportId)
 		{
@@ -151,7 +117,7 @@ namespace MedicsArchive.Controllers
 				return ResponseHelper.ErrorMsg();
 			}
 
-			int rowsAffected = _appDbContext.Reports
+			int rowsAffected = _db.Reports
 				.Where(r => r.Id == reportId && r.Active)
 				.ExecuteUpdate(update => update
 					.SetProperty(r => r.Active, false)
@@ -163,6 +129,51 @@ namespace MedicsArchive.Controllers
 			}
 
 			return ResponseHelper.JsonSuccess("Report deleted successfully.");
-		}
-	}
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkUpdateStatus(List<long> ids, bool approve)
+        {
+            var reports = _db.Reports.Where(r => ids.Contains(r.Id)).ToList();
+            foreach (var report in reports)
+            {
+                report.Status = approve ? Status.Approved : Status.Rejected;
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkDelete(List<long> ids)
+        {
+            var reports = _db.Reports.Where(r => ids.Contains(r.Id));
+            _db.Reports.RemoveRange(reports);
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadBulk(string ids)
+        {
+            var idList = ids.Split(',').Select(long.Parse).ToList();
+            var reports = await _db.Reports.Where(r => idList.Contains(r.Id)).ToListAsync();
+
+            // Generate ZIP of PDF reports, for example
+            using var ms = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                foreach (var report in reports)
+                {
+                    var entry = archive.CreateEntry($"{report.PatientName ?? "Report"}_{report.Id}.txt");
+                    using var writer = new StreamWriter(entry.Open());
+                    await writer.WriteAsync($"{report.PatientName}\n{report.StudyDescription}\n{report.Conclusion}");
+                }
+            }
+
+            ms.Position = 0;
+            return File(ms.ToArray(), "application/zip", "Reports.zip");
+        }
+
+    }
 }

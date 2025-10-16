@@ -73,7 +73,8 @@ namespace Data.DbContext
 					PhoneNumber = "0000 000 0000",
 					PhoneNumberConfirmed = false,
 					DateRegistered = DateTime.Now,
-					UserName = "SuperAdmin"
+					UserName = "SuperAdmin",
+					PasswordExpiryDate = null
 				},
 
 				new ApplicationUser
@@ -88,8 +89,9 @@ namespace Data.DbContext
 					PhoneNumber = "0000 000 0000",
 					PhoneNumberConfirmed = false,
 					DateRegistered = DateTime.Now,
-					UserName = "Admin"
-				}
+					UserName = "Admin",
+                    PasswordExpiryDate = null
+                }
 			};
 		}
 	}

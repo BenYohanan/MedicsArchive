@@ -12,6 +12,7 @@ namespace Data.Models
 		}
 		public string? FullName { get; set; }
 		public DateTime? DateRegistered { get; set; }
+		public DateTime? PasswordExpiryDate { get; set; }
 		public bool IsActive { get; set; }
 		public PassWordType PassWordType { get; set; }
 	}

@@ -99,7 +99,7 @@ function registerUser() {
 	data.FullName = $('#fullName').val();
 	$.ajax({
 		type: 'Post',
-		url: '/Report/RegisterUser',
+		url: '/Admin/RegisterUser',
 		dataType: 'json',
 		data:
 		{
@@ -183,6 +183,220 @@ function rejectAcceptReport(isAccept) {
 		},
 		error: function (ex) {
 			errorAlert("An error has occurred, try again. Please contact support if the error persists");
+		}
+	});
+}
+function openChangeTypeModal(userId) {
+	$('#userIdForType').val(userId);
+	$('#change_password_type_modal').modal('show');
+}
+
+function openChangePasswordModal(userId) {
+	$('#userIdForPassword').val(userId);
+	$('#change_password_modal').modal('show');
+}
+
+function changePasswordType() {
+	var userId = $('#userIdForType').val();
+	var newType = $('#newPassType').val();
+	if (!newType) {
+		infoAlert('Please select a new password type.');
+		return;
+	}
+	var defaultBtnValue = $('#change_type_btn').html();
+	$('#change_type_btn').html("Please wait...").attr("disabled", true);
+
+	$.ajax({
+		type: 'POST',
+		url: '/Admin/ChangePasswordType',
+		dataType: 'json',
+		data: { userId: userId, newType: newType },
+		success: function (result) {
+			if (!result.isError) {
+				newSuccessAlert(result.msg, location.href);
+			} else {
+				errorAlert(result.msg);
+			}
+			$('#change_type_btn').html(defaultBtnValue).attr("disabled", false);
+		},
+		error: function () {
+			errorAlert("An error has occurred, please try again.");
+			$('#change_type_btn').html(defaultBtnValue).attr("disabled", false);
+		}
+	});
+}
+
+function changePassword() {
+	var userId = $('#userIdForPassword').val();
+	var newPassword = $('#newPassword').val();
+	if (!newPassword) {
+		infoAlert('Please enter a new password.');
+		return;
+	}
+	var defaultBtnValue = $('#change_pass_btn').html();
+	$('#change_pass_btn').html("Please wait...").attr("disabled", true);
+
+	$.ajax({
+		type: 'POST',
+		url: '/Admin/ChangePassword',
+		dataType: 'json',
+		data: { userId: userId, newPassword: newPassword },
+		success: function (result) {
+			if (!result.isError) {
+				newSuccessAlert(result.msg, location.href);
+			} else {
+				errorAlert(result.msg);
+			}
+			$('#change_pass_btn').html(defaultBtnValue).attr("disabled", false);
+		},
+		error: function () {
+			errorAlert("An error has occurred, please try again.");
+			$('#change_pass_btn').html(defaultBtnValue).attr("disabled", false);
+		}
+	});
+}
+function updateReportStatus(ids, approve) {
+	$.ajax({
+		url: '/Reports/BulkUpdateStatus',
+		type: 'POST',
+		data: { ids: ids, approve: approve },
+		traditional: true,
+		success: function (result) {
+			if (!result.isError) {
+				var url = location.href;
+				newSuccessAlert(result.msg, url);
+			}
+			else {
+
+				errorAlert(result.msg);
+			}
+		},
+		error: function () {
+			errorAlert('Something went wrong while extending the duration.');
+		}
+	});
+}
+
+function deleteReports(ids) {
+	$.ajax({
+		url: '/Reports/BulkDelete',
+		type: 'POST',
+		data: { ids: ids },
+		traditional: true,
+		success: function (result) {
+			if (!result.isError) {
+				var url = location.href;
+				newSuccessAlert(result.msg, url);
+			}
+			else {
+
+				errorAlert(result.msg);
+			}
+		},
+		error: function () {
+			errorAlert('Something went wrong while extending the duration.');
+		}
+	});
+}
+
+function downloadReports(ids) {
+	window.location.href = '/Reports/DownloadBulk?ids=' + ids.join(',');
+}
+$('#filterBtn').click(function () {
+	const minAge = parseInt($('#minAge').val()) || 0;
+	const maxAge = parseInt($('#maxAge').val()) || 200;
+	const dateFrom = $('#studyDateFrom').val() ? new Date($('#studyDateFrom').val()) : null;
+	const dateTo = $('#studyDateTo').val() ? new Date($('#studyDateTo').val()) : null;
+
+	$('table tbody tr').each(function () {
+		const age = parseInt($(this).find('td:nth-child(3) span:contains("Age")').text().replace(/\D/g, '')) || 0;
+		const studyDateStr = $(this).find('td:nth-child(4)').text().trim();
+		const studyDate = studyDateStr ? new Date(studyDateStr) : null;
+
+		let show = true;
+		if (age < minAge || age > maxAge) show = false;
+		if (dateFrom && studyDate && studyDate < dateFrom) show = false;
+		if (dateTo && studyDate && studyDate > dateTo) show = false;
+
+		$(this).toggle(show);
+	});
+});
+
+// Reset filters
+$('#resetBtn').click(function () {
+	$('#minAge, #maxAge, #studyDateFrom, #studyDateTo').val('');
+	$('table tbody tr').show();
+});
+
+// Bulk select
+$('#select-all').change(function () {
+	$('.row-checkbox').prop('checked', this.checked);
+});
+
+function getSelectedIds() {
+	return $('.row-checkbox:checked').map(function () {
+		return $(this).val();
+	}).get();
+}
+
+// Bulk Approve
+$('#bulkApprove').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to approve.");
+	updateReportStatus(ids, true);
+});
+
+// Bulk Reject
+$('#bulkReject').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to reject.");
+	updateReportStatus(ids, false);
+});
+
+// Bulk Delete
+$('#bulkDelete').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to delete.");
+	deleteReports(ids);
+});
+
+// Bulk Download
+$('#bulkDownload').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to download.");
+	downloadReports(ids);
+});
+function openExtendDurationModal(userId) {
+	$('#userIdForExtension').val(userId);
+	$('#extend_duration_modal').modal('show');
+}
+
+function extendPasswordDuration() {
+	var userId = $('#userIdForExtension').val();
+	var days = parseInt($('#extraDays').val());
+
+	if (!days) {
+		errorAlert("Please enter a valid number of days.");
+		return;
+	}
+
+	$.ajax({
+		url: '/Admin/ExtendPasswordDuration', 
+		type: 'POST',
+		data: { userId: userId, extraDays: days },
+
+		success: function (result) {
+			if (!result.isError) {
+				var url = location.href;
+				newSuccessAlert(result.msg, url);
+			}
+			else {
+				
+				errorAlert(result.msg);
+			}
+		},
+		error: function () {
+			errorAlert('Something went wrong while extending the duration.');
 		}
 	});
 }
