@@ -3,24 +3,29 @@ using Data.Models;
 using Data.ViewModels;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
+using Microsoft.AspNetCore.Hosting;
+using SelectPdf;
 
 namespace Service.Helpers
 {
 	public interface IReportHelper
 	{
-		bool ExtractPatientDataFromPdfs(IEnumerable<string> filePaths, bool isAdmin);
+        string CreateFileServices(string site, string fileName);
+        bool ExtractPatientDataFromPdfs(IEnumerable<string> filePaths, bool isAdmin);
 		List<ReportViewModel> PatientReports(bool isAdmin);
 	}
 
 	public class ReportHelper : IReportHelper
 	{
 		private readonly AppDbContext db;
-		public ReportHelper(AppDbContext appDbContext)
-		{
-			this.db = appDbContext;
-		}
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public ReportHelper(AppDbContext appDbContext, IWebHostEnvironment webHostEnvironment)
+        {
+            this.db = appDbContext;
+            _webHostEnvironment = webHostEnvironment;
+        }
 
-		public List<ReportViewModel> PatientReports(bool isAdmin)
+        public List<ReportViewModel> PatientReports(bool isAdmin)
 		{
 			var query = db.Reports.Where(x => x.Active).AsQueryable();
 			if (!isAdmin)
@@ -92,7 +97,7 @@ namespace Service.Helpers
 		private ReportViewModel ExtractPatientData(string filePath)
 		{
 			using (var pdfReader = new PdfReader(filePath))
-			using (var pdfDoc = new PdfDocument(pdfReader))
+			using (var pdfDoc = new iText.Kernel.Pdf.PdfDocument(pdfReader))
 			{
 				string text = string.Empty;
 
@@ -147,6 +152,47 @@ namespace Service.Helpers
 			};
 			return data;
 		}
-	}
+        public string CreateFileServices(string site, string fileName)
+        {
+            var folderToSaveFile = "Report";
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, folderToSaveFile);
+
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var path = Path.Combine(uploadsFolder, fileName.TrimStart('\\', '/'));
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            HtmlToPdf converter = new HtmlToPdf();
+            converter.Options.PdfPageSize = PdfPageSize.A4;
+            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+            converter.Options.MarginBottom = 20;
+            converter.Options.MarginTop = 20;
+            converter.Options.MarginLeft = 20;
+            converter.Options.MarginRight = 20;
+
+            converter.Options.WebPageWidth = 1024;
+            converter.Options.WebPageHeight = 0; 
+            converter.Options.KeepImagesTogether = true;
+            converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
+
+
+            SelectPdf.PdfDocument doc = converter.ConvertUrl(site);
+            doc.Save(path);
+            doc.Close();
+
+            var pathParts = path.Split(Path.DirectorySeparatorChar);
+            var folderIndex = Array.IndexOf(pathParts, folderToSaveFile);
+            var extractedPath = string.Join("/", pathParts.Skip(folderIndex));
+            return extractedPath;
+        }
+
+    }
 
 }

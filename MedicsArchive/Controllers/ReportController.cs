@@ -14,13 +14,15 @@ namespace MedicsArchive.Controllers
 		public readonly IUserHelper _userHelper;
         public readonly AppDbContext _db;
 		public readonly IEmailTemplateService _emailTemplateService;
-        public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext, IOpenAIService openAIService, IEmailTemplateService emailTemplateService)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public ReportController(IReportHelper reportHelper, IUserHelper userHelper, AppDbContext appDbContext, IOpenAIService openAIService, IEmailTemplateService emailTemplateService, IWebHostEnvironment webHostEnvironment)
         {
             this.reportHelper = reportHelper;
             _userHelper = userHelper;
             _db = appDbContext;
             this.openAIService = openAIService;
             _emailTemplateService = emailTemplateService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
@@ -153,26 +155,80 @@ namespace MedicsArchive.Controllers
             return Ok();
         }
 
-        [HttpGet]
-        public async Task<IActionResult> DownloadBulk(string ids)
+        public async Task<IActionResult> DownloadReports(string ids)
         {
-            var idList = ids.Split(',').Select(long.Parse).ToList();
-            var reports = await _db.Reports.Where(r => idList.Contains(r.Id)).ToListAsync();
+            var idList = ids.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(long.Parse)
+                            .ToList();
 
-            // Generate ZIP of PDF reports, for example
+            if (!idList.Any())
+                return BadRequest("No report IDs provided.");
+
+            var reports = await _db.Reports
+                .Where(r => idList.Contains(r.Id))
+                .ToListAsync();
+
+            if (reports.Count == 1)
+            {
+                var id = reports.First().Id;
+                var site = $"https://{HttpContext.Request.Host}/Report/Result?id={id}";
+                var fileName = "\\" + $"{id}-Result.pdf";
+                var path = reportHelper.CreateFileServices(site, fileName);
+                var filePath = Path.Combine(_webHostEnvironment.WebRootPath, path.Replace("/", "\\"));
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                return File(fileBytes, "application/pdf", $"{id}-Result.pdf");
+            }
+
             using var ms = new MemoryStream();
             using (var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, true))
             {
                 foreach (var report in reports)
                 {
-                    var entry = archive.CreateEntry($"{report.PatientName ?? "Report"}_{report.Id}.txt");
-                    using var writer = new StreamWriter(entry.Open());
-                    await writer.WriteAsync($"{report.PatientName}\n{report.StudyDescription}\n{report.Conclusion}");
+                    var site = $"https://{HttpContext.Request.Host}/Report/Result?id={report.Id}&isBulk=true";
+                    var fileName = "\\" + $"{report.Id}-Result.pdf";
+                    var path = reportHelper.CreateFileServices(site, fileName);
+                    var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, path.Replace("/", "\\"));
+
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        var entry = archive.CreateEntry($"{report.Id}-Result.pdf");
+                        using var entryStream = entry.Open();
+                        using var fileStream = System.IO.File.OpenRead(fullPath);
+                        await fileStream.CopyToAsync(entryStream);
+                    }
                 }
             }
 
             ms.Position = 0;
             return File(ms.ToArray(), "application/zip", "Reports.zip");
+        }
+
+        public async Task<IActionResult> Result(int id, bool isBulk = false)
+        {
+            var report = await _db.Reports.FirstOrDefaultAsync(r => r.Id == id);
+            if (report == null)
+                return NotFound("Report not found.");
+
+            var vm = new Data.ViewModels.ReportViewModel
+            {
+                PatientID = report.PatientID,
+                PatientName = report.PatientName,
+                DOB = report.DOB.Value.ToString("dd/MM/yyyy"),
+                Sex = report.Sex,
+                ClinicalInformation = report.ClinicalInformation,
+                Conclusion = report.Conclusion,
+                Exam = report.Exam,
+                StudyDate = report.StudyDate.Value.ToString("dd/MM/yyyy"),
+                DateCreated = report.DateCreated.Value.ToString("dd/MM/yyyy"),
+                Findings = report.StudyDescription,
+                Age = report.Age,
+                Institution = report.Institution,
+                Status = report.Status,
+                Id = report.Id
+            };
+
+            ViewBag.IsBulk = isBulk;
+            return View(vm);
         }
 
     }

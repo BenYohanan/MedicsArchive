@@ -183,7 +183,10 @@
 										{
 											<td>
 												<div class="action-icon d-inline-flex">
-													<a href="#" class="me-2" onclick="loadReportId('@report.Id')"><i class="ti ti-download"></i></a>
+													<a href="javascript:void(0);" class="me-2" onclick="printReport('@report.Id')">
+														<i class="ti ti-download"></i>
+													</a>
+
 													@if (report.Status == Status.Approved)
 													{
 														<a href="javascript:void(0);" class="me-2" title="Approved">
@@ -192,8 +195,8 @@
 													}
 													else
 													{
-														<a href="#" class="me-2" data-bs-toggle="modal" data-bs-target="#reject_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-down"></i></a>
-														<a href="#" class="me-2" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
+														<a href="javascript:void(0);" class="me-2" data-bs-toggle="modal" data-bs-target="#reject_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-down"></i></a>
+														<a href="javascript:void(0);" class="me-2" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
 													}
 													<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_report" onclick="loadReportId('@report.Id')"><i class="ti ti-trash"></i></a>
 												</div>
@@ -203,7 +206,9 @@
 										{
 											<td>
 												<div class="action-icon d-inline-flex">
-													<a href="#" class="me-2" onclick="loadReportId('@report.Id')"><i class="ti ti-download"></i></a>
+													<a href="javascript:void(0);" class="me-2" onclick="printReport('@report.Id')">
+														<i class="ti ti-download"></i>
+													</a>
 													<a href="javascript:void(0);" class="me-2" title="Approved">
 														<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
 													</a>
@@ -324,24 +329,15 @@
 			}
 		}
 
-		// When "Select All" is clicked
 		$('#select-all').on('change', function () {
 			$('.row-checkbox').prop('checked', this.checked);
 			toggleBulkActions();
 		});
 
-		// When any row checkbox changes
 		$(document).on('change', '.row-checkbox', function () {
 			const allChecked = $('.row-checkbox').length === $('.row-checkbox:checked').length;
 			$('#select-all').prop('checked', allChecked);
 			toggleBulkActions();
-		});
-
-		// Hide bulk actions after bulk operation
-		$('#bulkApprove, #bulkReject, #bulkDownload, #bulkDelete').on('click', function () {
-			$('#bulkActions').addClass('hide-important');
-			$('#select-all').prop('checked', false);
-			$('.row-checkbox').prop('checked', false);
 		});
 	});
 </script>

@@ -299,9 +299,6 @@ function deleteReports(ids) {
 	});
 }
 
-function downloadReports(ids) {
-	window.location.href = '/Reports/DownloadBulk?ids=' + ids.join(',');
-}
 $('#filterBtn').click(function () {
 	const minAge = parseInt($('#minAge').val()) || 0;
 	const maxAge = parseInt($('#maxAge').val()) || 200;
@@ -328,44 +325,6 @@ $('#resetBtn').click(function () {
 	$('table tbody tr').show();
 });
 
-// Bulk select
-$('#select-all').change(function () {
-	$('.row-checkbox').prop('checked', this.checked);
-});
-
-function getSelectedIds() {
-	return $('.row-checkbox:checked').map(function () {
-		return $(this).val();
-	}).get();
-}
-
-// Bulk Approve
-$('#bulkApprove').click(function () {
-	const ids = getSelectedIds();
-	if (ids.length === 0) return infoAlert("Select at least one record to approve.");
-	updateReportStatus(ids, true);
-});
-
-// Bulk Reject
-$('#bulkReject').click(function () {
-	const ids = getSelectedIds();
-	if (ids.length === 0) return infoAlert("Select at least one record to reject.");
-	updateReportStatus(ids, false);
-});
-
-// Bulk Delete
-$('#bulkDelete').click(function () {
-	const ids = getSelectedIds();
-	if (ids.length === 0) return infoAlert("Select at least one record to delete.");
-	deleteReports(ids);
-});
-
-// Bulk Download
-$('#bulkDownload').click(function () {
-	const ids = getSelectedIds();
-	if (ids.length === 0) return infoAlert("Select at least one record to download.");
-	downloadReports(ids);
-});
 function openExtendDurationModal(userId) {
 	$('#userIdForExtension').val(userId);
 	$('#extend_duration_modal').modal('show');
@@ -399,4 +358,75 @@ function extendPasswordDuration() {
 			errorAlert('Something went wrong while extending the duration.');
 		}
 	});
+}
+
+function printReport(reportId) {
+	const link = event.currentTarget;
+	const originalHtml = link.innerHTML;
+
+	link.innerHTML = `<i class="fa fa-spinner fa-spin" style="color:#F37438;"></i>`;
+	link.style.pointerEvents = 'none';
+
+	window.location.href = '/Report/DownloadReports?ids=' + reportId;
+
+	setTimeout(() => {
+		link.innerHTML = originalHtml;
+		link.style.pointerEvents = 'auto';
+	}, 4000);
+}
+
+$('#select-all').change(function () {
+	$('.row-checkbox').prop('checked', this.checked);
+});
+
+function getSelectedIds() {
+	return $('.row-checkbox:checked').map(function () {
+		return $(this).val();
+	}).get();
+}
+
+$('#bulkApprove').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to approve.");
+	updateReportStatus(ids, true);
+	//hideBulkActions();
+});
+
+$('#bulkReject').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to reject.");
+	updateReportStatus(ids, false);
+	//hideBulkActions();
+});
+
+$('#bulkDelete').click(function () {
+	const ids = getSelectedIds();
+	if (ids.length === 0) return infoAlert("Select at least one record to delete.");
+	deleteReports(ids);
+	//hideBulkActions();
+});
+
+$('#bulkDownload').click(function () {
+	const btn = $(this);
+	const originalHtml = btn.html();
+	const ids = getSelectedIds();
+
+	if (ids.length === 0) return infoAlert("Select at least one record to download.");
+
+	btn.html(`<i class="fa fa-spinner fa-spin me-1" style="color:white;"></i> Downloading...`);
+	btn.prop('disabled', true);
+
+	window.location.href = '/Report/DownloadReports?ids=' + ids.join(',');
+
+	setTimeout(() => {
+		btn.html(originalHtml);
+		btn.prop('disabled', false);
+		//hideBulkActions();
+	}, 5000);
+});
+
+function hideBulkActions() {
+	$('#bulkActions').addClass('hide-important');
+	$('#select-all').prop('checked', false);
+	$('.row-checkbox').prop('checked', false);
 }

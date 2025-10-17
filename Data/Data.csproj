@@ -17,6 +17,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NETCore.MailKit" Version="2.1.0" />
+    <PackageReference Include="Select.HtmlToPdf.NetCore" Version="25.2.0" />
   </ItemGroup>
 
 </Project>
