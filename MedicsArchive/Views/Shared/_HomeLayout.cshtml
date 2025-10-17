@@ -1,114 +1,161 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-    <head>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
 
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="">
-        <meta name="author" content="">
+    <title>@ViewData["Title"] | MedImaging Data Bank</title>
 
-        <title>@ViewData["Title"] | Medics Archive</title>
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="~/template/assets/img/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="~/template/assets/img/apple-touch-icon.png">
 
-        <!-- Favicon -->
-        <link rel="shortcut icon" type="image/x-icon" href="~/template/assets/img/favicon.png">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/template/assets/css/bootstrap.min.css">
 
-        <!-- Apple Touch Icon -->
-        <link rel="apple-touch-icon" sizes="180x180" href="~/template/assets/img/apple-touch-icon.png">
+    <!-- Feather CSS -->
+    <link rel="stylesheet" href="~/template/assets/plugins/icons/feather/feather.css">
 
-        <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="~/template/assets/css/bootstrap.min.css">
+    <!-- Tabler Icon CSS -->
+    <link rel="stylesheet" href="~/template/assets/plugins/tabler-icons/tabler-icons.css">
 
-        <!-- Feather CSS -->
-        <link rel="stylesheet" href="~/template/assets/plugins/icons/feather/feather.css">
+    <!-- Fontawesome CSS -->
+    <link rel="stylesheet" href="~/template/assets/plugins/fontawesome/css/fontawesome.min.css">
+    <link rel="stylesheet" href="~/template/assets/plugins/fontawesome/css/all.min.css">
 
-        <!-- Tabler Icon CSS -->
-        <link rel="stylesheet" href="~/template/assets/plugins/tabler-icons/tabler-icons.css">
+    <!-- SweetAlert2 -->
+    <link href="~/css/sweetalert2.css" rel="stylesheet" />
 
-        <!-- Fontawesome CSS -->
-        <link rel="stylesheet" href="~/template/assets/plugins/fontawesome/css/fontawesome.min.css">
-        <link rel="stylesheet" href="~/template/assets/plugins/fontawesome/css/all.min.css">
-        <link href="~/css/sweetalert2.css" rel="stylesheet" />
-        <!-- Main CSS -->
-        <link rel="stylesheet" href="~/template/assets/css/style.css">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="~/template/assets/css/style.css">
 
-        <script>
-            function errorAlert(message) {
-                Swal.fire({
-                    icon: 'error',
-                    text: message,
-                    timer: 60000,
-                    confirmButtonColor: "#366092",
-                })
-            }
-             function newSuccessAlert(message, url) {
-                Swal.fire({
-                    icon: 'success',
-                    text: message,
-                    confirmButtonColor: "#FF9B44",
-                }).then((isConfirm) => {
-                    if (isConfirm) {
-                        location.reload(url);
-                    }
-                })
-            }
-            function infoAlert(message) {
-                Swal.fire({
-                    icon: 'info',
-                    text: message,
-                    timer: 30000,
-                    confirmButtonColor: "#366092",
-                })
-            }
+    <style>
+        :root {
+            --primary: #F37438;
+            --text-dark: #222;
+            --text-light: #666;
+            --bg-light: #fafafa;
+        }
 
-            function successAlert(message) {
-                Swal.fire({
-                    icon: 'success',
-                    text: message,
-                    timer: 30000,
-                    confirmButtonColor: "#366092",
-                })
+        /* Navbar */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: var(--text-dark);
+            padding: 1rem 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+            header h1 {
+                margin: 0;
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: var(--primary);
+                letter-spacing: 0.5px;
             }
 
-            function successAlertWithRedirect(message, url) {
-                Swal.fire({
-                    title: "Success",
-                    text: message,
-                    icon: "success",
-                    timer: 30000,
-                    overlay: "background - color: rgba(43, 165, 137, 0.45)",
-                    confirmButtonColor: "#366092",
-                }).then(function () {
+        nav a {
+            color: var(--text-dark);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
 
-                    location.href = url;
-                })
+            nav a:hover {
+                color: var(--primary);
             }
-        </script>
-    </head>
-    <body>
 
-        <div class="preloader"></div>
+            nav a::after {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 2px;
+                left: 0;
+                bottom: -3px;
+                background-color: var(--primary);
+                transition: width 0.3s ease;
+            }
 
-        <main role="main" class="pb-3 mb-3">
-            @RenderBody()
-        </main>
+            nav a:hover::after {
+                width: 100%;
+            }
 
-        <!-- jQuery -->
-        <script src="~/template/assets/js/jquery-3.7.1.min.js"></script>
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f5f5f5;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+    </style>
 
-        <!-- Bootstrap Core JS -->
-        <script src="~/template/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/sweetalert2.all.min.js"></script>
 
-        <!-- Feather Icon JS -->
-        <script src="~/template/assets/js/feather.min.js"></script>
+    <script>
+        function errorAlert(message) {
+            Swal.fire({ icon: 'error', text: message, timer: 60000, confirmButtonColor: "#366092" })
+        }
 
-        <!-- Custom JS -->
-        <script src="~/template/assets/js/script.js"></script>
+        function newSuccessAlert(message, url) {
+            Swal.fire({ icon: 'success', text: message, confirmButtonColor: "#FF9B44" })
+                .then(() => location.reload(url));
+        }
 
-        <script src="~/js/sweetalert2.all.min.js"></script>
-        <!-- Main Custom JS -->
-        <script type="text/javascript" src="~/template/js/script.js"></script>
-        <script src="~/js/site.js"></script>
-    </body>
+        function infoAlert(message) {
+            Swal.fire({ icon: 'info', text: message, timer: 30000, confirmButtonColor: "#366092" })
+        }
+
+        function successAlert(message) {
+            Swal.fire({ icon: 'success', text: message, timer: 30000, confirmButtonColor: "#366092" })
+        }
+
+        function successAlertWithRedirect(message, url) {
+            Swal.fire({
+                title: "Success",
+                text: message,
+                icon: "success",
+                timer: 30000,
+                confirmButtonColor: "#366092"
+            }).then(() => location.href = url);
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header>
+        <h1><i class="fa-solid fa-heart-pulse me-2" style="color:#F37438;"></i> MedImaging</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/Account/Login">Login</a>
+        </nav>
+    </header>
+
+    <main role="main" class="pb-3 mb-3">
+        @RenderBody()
+    </main>
+
+    <footer>
+        &copy; @DateTime.Now.Year MedImaging Data Bank. All Rights Reserved.
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/template/assets/js/jquery-3.7.1.min.js"></script>
+    <script src="~/template/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="~/template/assets/js/feather.min.js"></script>
+    <script src="~/template/assets/js/script.js"></script>
+    <script src="~/js/site.js"></script>
+</body>
 </html>
-

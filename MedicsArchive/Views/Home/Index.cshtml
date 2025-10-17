@@ -1,8 +1,190 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
+    Layout = null;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MedImaging Data Bank</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --primary: #F37438;
+            --text-dark: #222;
+            --text-light: #666;
+            --bg-light: #fafafa;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #fff;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* --- Navbar --- */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: var(--text-dark);
+            padding: 1rem 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+            header h1 {
+                margin: 0;
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: var(--primary);
+                letter-spacing: 0.5px;
+            }
+
+        nav a {
+            color: var(--text-dark);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+            nav a:hover {
+                color: var(--primary);
+            }
+
+            nav a::after {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 2px;
+                left: 0;
+                bottom: -3px;
+                background-color: var(--primary);
+                transition: width 0.3s ease;
+            }
+
+            nav a:hover::after {
+                width: 100%;
+            }
+
+
+        .hero {
+            text-align: center;
+            padding: 6rem 2rem;
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/images/medical-bg.png') center/cover no-repeat;
+            color: #fff;
+        }
+
+            .hero .btn {
+                background: var(--primary);
+                color: #fff;
+                padding: 0.9rem 2rem;
+                border: none;
+                border-radius: 30px;
+                font-size: 1rem;
+                cursor: pointer;
+                text-decoration: none;
+                font-weight: 600;
+                transition: background 0.3s ease;
+            }
+
+                .hero .btn:hover {
+                    background: #e16225;
+                }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            padding: 4rem;
+            background: var(--bg-light);
+        }
+
+        .feature-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+            .feature-card:hover {
+                transform: translateY(-5px);
+            }
+
+            .feature-card i {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 1rem;
+            }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f5f5f5;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fa-solid fa-heart-pulse me-2" style="color:#F37438;"></i> MedImaging</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/Account/Login">Login</a>
+        </nav>
+    </header>
+
+
+    <section class="hero">
+        <h2>Empowering Diagnostic Imaging with Secure Cloud Storage</h2>
+        <p>Your trusted platform for managing, reviewing, and storing medical imaging reports with full confidentiality.</p>
+        <a href="/Account/Login" class="btn">Access Your Portal</a>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h3>Data Security</h3>
+            <p>Advanced encryption and HIPAA-compliant storage to keep patient records safe and confidential.</p>
+        </div>
+        <div class="feature-card">
+            <i class="fa-solid fa-stethoscope"></i>
+            <h3>AI-Enhanced Insights</h3>
+            <p>Analyze radiology data efficiently to improve diagnosis and research capabilities.</p>
+        </div>
+        <div class="feature-card">
+            <i class="fa-solid fa-database"></i>
+            <h3>Centralized Reports</h3>
+            <p>Access imaging reports anytime, anywhere, with seamless cloud-based access for authorized users.</p>
+        </div>
+        <div class="feature-card">
+            <i class="fa-solid fa-user-shield"></i>
+            <h3>Patient Privacy</h3>
+            <p>Patient identifiers are anonymized by default, ensuring confidentiality in every transaction.</p>
+        </div>
+    </section>
+
+    <footer>
+        &copy; @DateTime.Now.Year MedImaging Data Bank. All Rights Reserved.
+    </footer>
+</body>
+</html>
