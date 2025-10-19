@@ -1,13 +1,15 @@
 ﻿using Data.DbContext;
 using Data.Models;
 using MedicsArchive.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Service.Helpers;
 
 namespace MedicsArchive.Controllers
 {
-	public class ReportController : Controller
+    [Authorize]
+    public class ReportController : Controller
 	{
 		public readonly IReportHelper reportHelper;
 		public readonly IOpenAIService openAIService;
@@ -98,14 +100,14 @@ namespace MedicsArchive.Controllers
                 return ResponseHelper.JsonError("Unable to approve");
             }
 
-			var user = _db.Reports.Include(r => r.User).FirstOrDefault(r => r.Id == reportId)?.User;
+			var report = _db.Reports.Include(r => r.User).FirstOrDefault(r => r.Id == reportId);
             if (isAccept)
             {
-                _emailTemplateService.SendReportApprovalEmail(user);
+                _emailTemplateService.SendReportApprovalEmail(report.User, report.Exam);
             }
             else
             {
-                _emailTemplateService.SendReportRejectionEmail(user);
+                _emailTemplateService.SendReportRejectionEmail(report.User, report.Exam);
             }
 
             return ResponseHelper.JsonSuccess($"Report {(isAccept ? "approved" : "rejected")} successfully.");
@@ -147,12 +149,19 @@ namespace MedicsArchive.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> BulkDelete(List<long> ids)
+        public JsonResult BulkDelete(List<long> ids)
         {
-            var reports = _db.Reports.Where(r => ids.Contains(r.Id));
-            _db.Reports.RemoveRange(reports);
-            await _db.SaveChangesAsync();
-            return Ok();
+            var reports = _db.Reports
+                .Where(r => ids.Contains(r.Id) && r.Active)
+                .ExecuteUpdate(update => update
+                    .SetProperty(r => r.Active, false)
+                );
+            if (reports == 0)
+            {
+                return ResponseHelper.JsonError("Unable to delete");
+            }
+
+            return ResponseHelper.JsonSuccess("Reports deleted successfully.");
         }
 
         public async Task<IActionResult> DownloadReports(string ids)
@@ -163,7 +172,7 @@ namespace MedicsArchive.Controllers
 
             if (!idList.Any())
                 return BadRequest("No report IDs provided.");
-
+            string redirectUrl = string.Empty;
             var reports = await _db.Reports
                 .Where(r => idList.Contains(r.Id))
                 .ToListAsync();
@@ -171,12 +180,12 @@ namespace MedicsArchive.Controllers
             if (reports.Count == 1)
             {
                 var id = reports.First().Id;
-                var site = $"https://{HttpContext.Request.Host}/Report/Result?id={id}";
+                var site = $"https://{HttpContext.Request.Host}/Home/Result?id={id}";
                 var fileName = "\\" + $"{id}-Result.pdf";
                 var path = reportHelper.CreateFileServices(site, fileName);
                 var filePath = Path.Combine(_webHostEnvironment.WebRootPath, path.Replace("/", "\\"));
-                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-                return File(fileBytes, "application/pdf", $"{id}-Result.pdf");
+                redirectUrl = $"https://{HttpContext.Request.Host}/{path}";
+                return Json(new { isError = false, redirectUrl });
             }
 
             using var ms = new MemoryStream();
@@ -184,7 +193,7 @@ namespace MedicsArchive.Controllers
             {
                 foreach (var report in reports)
                 {
-                    var site = $"https://{HttpContext.Request.Host}/Report/Result?id={report.Id}&isBulk=true";
+                    var site = $"https://{HttpContext.Request.Host}/Home/Result?id={report.Id}&isBulk=true";
                     var fileName = "\\" + $"{report.Id}-Result.pdf";
                     var path = reportHelper.CreateFileServices(site, fileName);
                     var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, path.Replace("/", "\\"));
@@ -200,36 +209,18 @@ namespace MedicsArchive.Controllers
             }
 
             ms.Position = 0;
-            return File(ms.ToArray(), "application/zip", "Reports.zip");
+
+            var reportsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "reports");
+            if (!Directory.Exists(reportsFolder))
+                Directory.CreateDirectory(reportsFolder);
+
+            var zipName = $"Reports-{DateTime.Now:yyyyMMddHHmmss}.zip";
+            var zipPath = Path.Combine(reportsFolder, zipName);
+
+            await System.IO.File.WriteAllBytesAsync(zipPath, ms.ToArray());
+
+            redirectUrl = $"https://{HttpContext.Request.Host}/reports/{zipName}";
+            return Json(new { isError = false, redirectUrl });
         }
-
-        public async Task<IActionResult> Result(int id, bool isBulk = false)
-        {
-            var report = await _db.Reports.FirstOrDefaultAsync(r => r.Id == id);
-            if (report == null)
-                return NotFound("Report not found.");
-
-            var vm = new Data.ViewModels.ReportViewModel
-            {
-                PatientID = report.PatientID,
-                PatientName = report.PatientName,
-                DOB = report.DOB.Value.ToString("dd/MM/yyyy"),
-                Sex = report.Sex,
-                ClinicalInformation = report.ClinicalInformation,
-                Conclusion = report.Conclusion,
-                Exam = report.Exam,
-                StudyDate = report.StudyDate.Value.ToString("dd/MM/yyyy"),
-                DateCreated = report.DateCreated.Value.ToString("dd/MM/yyyy"),
-                Findings = report.StudyDescription,
-                Age = report.Age,
-                Institution = report.Institution,
-                Status = report.Status,
-                Id = report.Id
-            };
-
-            ViewBag.IsBulk = isBulk;
-            return View(vm);
-        }
-
     }
 }

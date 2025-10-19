@@ -74,6 +74,7 @@ namespace Data.DbContext
 					PhoneNumberConfirmed = false,
 					DateRegistered = DateTime.Now,
 					UserName = "SuperAdmin",
+					FullName = "SuperAdmin",
 					PasswordExpiryDate = null
 				},
 
@@ -90,6 +91,7 @@ namespace Data.DbContext
 					PhoneNumberConfirmed = false,
 					DateRegistered = DateTime.Now,
 					UserName = "Admin",
+					FullName = "Default Admin",
                     PasswordExpiryDate = null
                 }
 			};

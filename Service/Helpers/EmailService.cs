@@ -20,6 +20,7 @@ namespace Service.Helpers
         private readonly string? server;
         private readonly int? port;
         private readonly string? password;
+        private readonly string companyEmail = string.Empty;
         public EmailService(IConfiguration configuration)
         {
             _emailConfiguration = configuration;
@@ -27,6 +28,7 @@ namespace Service.Helpers
             server = _emailConfiguration["EmailConfiguration:SmtpServer"];
             port = int.Parse(_emailConfiguration["EmailConfiguration:SmtpPort"]);
             password = _emailConfiguration["EmailConfiguration:SmtpPassword"];
+            companyEmail = _emailConfiguration["EmailConfiguration:CompanyEmail"] ?? "okoronkwomarvelous@hotmail.com";
         }
         
         public void SendEmail(string toEmail, string subject, string message)
@@ -34,7 +36,7 @@ namespace Service.Helpers
            
             var fromAddress = new EmailAddress
             {
-                Name = "Medics Archive",
+                Name = "Medimaging Databank",
                 Address = address
             };
 
@@ -57,8 +59,8 @@ namespace Service.Helpers
                 ToAddresses = toAddressList,
                 Subject = subject,
                 Content = message,
-                CompanyEmail = "okoronkwomarvelous@hotmail.com",
-                CompanyName =  "Medics Archive"
+                CompanyEmail = companyEmail,
+                CompanyName = "Medimaging Databank"
             };
 
             CallHangfire(emailMessage);
@@ -69,12 +71,12 @@ namespace Service.Helpers
             BackgroundJob.Enqueue(() => SendEmail(toEmail, subject, message));
         }
 
-        private void CallHangfire(EmailMessage emailMessage)
+        public void CallHangfire(EmailMessage emailMessage)
         {
             BackgroundJob.Enqueue(() => Send(emailMessage));
         }
 
-        private void Send(EmailMessage emailMessage)
+        public void Send(EmailMessage emailMessage)
         {
             var message = new MimeMessage();
             message.To.AddRange(emailMessage.ToAddresses.Select(x => new MailboxAddress(x.Name, x.Address)));

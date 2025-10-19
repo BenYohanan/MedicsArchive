@@ -2,6 +2,7 @@
 using Data.Models;
 using Data.ViewModels;
 using MedicsArchive.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -9,6 +10,7 @@ using Service.Helpers;
 
 namespace MedicsArchive.Controllers
 {
+    [Authorize]
     public class AdminController : Controller
     {
         public readonly IReportHelper reportHelper;
@@ -87,7 +89,11 @@ namespace MedicsArchive.Controllers
             {
                 return ResponseHelper.ErrorMsg();
             }
-            _emailTemplateService.SendRegistrationEmail(user);
+
+            var request = HttpContext.Request;
+            string baseUrl = $"{request.Scheme}://{request.Host}";
+
+            _emailTemplateService.SendRegistrationEmail(user, baseUrl);
             return ResponseHelper.JsonSuccess("User registered successfully");
         }
 
@@ -146,5 +152,25 @@ namespace MedicsArchive.Controllers
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             return ResponseHelper.JsonError("Failed to change password");
         }
+
+        [HttpPost]
+        public async Task<JsonResult> MakeUserAdmin(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return ResponseHelper.JsonError("User not found");
+
+            var isAlreadyAdmin = await _userManager.IsInRoleAsync(user, SeedItems.AdminRole);
+            if (isAlreadyAdmin)
+                return ResponseHelper.JsonError("User is already an admin");
+
+            var result = await _userManager.AddToRoleAsync(user, SeedItems.AdminRole);
+            if (result.Succeeded)
+                return ResponseHelper.JsonSuccess("User promoted to admin successfully");
+
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return ResponseHelper.JsonError($"Failed to promote user: {errors}");
+        }
+
     }
 }

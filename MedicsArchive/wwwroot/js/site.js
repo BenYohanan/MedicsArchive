@@ -195,7 +195,10 @@ function openChangePasswordModal(userId) {
 	$('#userIdForPassword').val(userId);
 	$('#change_password_modal').modal('show');
 }
-
+function openMakeAdminModal(userId) {
+	$('#userIdToMakeId').val(userId);
+	$('#makeAdmin_modal').modal('show');
+}
 function changePasswordType() {
 	var userId = $('#userIdForType').val();
 	var newType = $('#newPassType').val();
@@ -257,7 +260,7 @@ function changePassword() {
 }
 function updateReportStatus(ids, approve) {
 	$.ajax({
-		url: '/Reports/BulkUpdateStatus',
+		url: '/Report/BulkUpdateStatus',
 		type: 'POST',
 		data: { ids: ids, approve: approve },
 		traditional: true,
@@ -267,7 +270,6 @@ function updateReportStatus(ids, approve) {
 				newSuccessAlert(result.msg, url);
 			}
 			else {
-
 				errorAlert(result.msg);
 			}
 		},
@@ -279,7 +281,7 @@ function updateReportStatus(ids, approve) {
 
 function deleteReports(ids) {
 	$.ajax({
-		url: '/Reports/BulkDelete',
+		url: '/Report/BulkDelete',
 		type: 'POST',
 		data: { ids: ids },
 		traditional: true,
@@ -305,12 +307,23 @@ $('#filterBtn').click(function () {
 	const dateFrom = $('#studyDateFrom').val() ? new Date($('#studyDateFrom').val()) : null;
 	const dateTo = $('#studyDateTo').val() ? new Date($('#studyDateTo').val()) : null;
 
+	function parseDate(str) {
+		if (!str) return null;
+		const parts = str.split(/[\/\-]/);
+		if (parts[0].length === 4) {
+			return new Date(parts[0], parts[1] - 1, parts[2]);
+		} else {
+			return new Date(parts[2], parts[1] - 1, parts[0]);
+		}
+	}
+
 	$('table tbody tr').each(function () {
 		const age = parseInt($(this).find('td:nth-child(3) span:contains("Age")').text().replace(/\D/g, '')) || 0;
-		const studyDateStr = $(this).find('td:nth-child(4)').text().trim();
-		const studyDate = studyDateStr ? new Date(studyDateStr) : null;
+		const studyDateStr = $(this).find('td:nth-child(5)').text().trim(); 
+		const studyDate = parseDate(studyDateStr);
 
 		let show = true;
+
 		if (age < minAge || age > maxAge) show = false;
 		if (dateFrom && studyDate && studyDate < dateFrom) show = false;
 		if (dateTo && studyDate && studyDate > dateTo) show = false;
@@ -367,12 +380,87 @@ function printReport(reportId) {
 	link.innerHTML = `<i class="fa fa-spinner fa-spin" style="color:#F37438;"></i>`;
 	link.style.pointerEvents = 'none';
 
-	window.location.href = '/Report/DownloadReports?ids=' + reportId;
+	$.ajax({
+		url: '/Report/DownloadReports',
+		type: 'POST',
+		data: { ids: reportId },
+		success: function (result) {
+			if (!result.isError && result.redirectUrl) {
+				const fileUrl = result.redirectUrl.toLowerCase();
 
-	setTimeout(() => {
-		link.innerHTML = originalHtml;
-		link.style.pointerEvents = 'auto';
-	}, 4000);
+				if (fileUrl.endsWith('.pdf')) {
+					const newTab = window.open(fileUrl, '_blank');
+					triggerFileDownload(fileUrl);
+					if (newTab) newTab.focus();
+				} else {
+					triggerFileDownload(fileUrl);
+				}
+			} else {
+				errorAlert(result.message || "Error preparing download");
+			}
+		},
+		error: function () {
+			errorAlert("An unexpected error occurred.");
+		},
+		complete: function () {
+			setTimeout(() => {
+				link.innerHTML = originalHtml;
+				link.style.pointerEvents = 'auto';
+			}, 3000);
+		}
+	});
+}
+
+
+$('#bulkDownload').click(function () {
+	const btn = $(this);
+	const originalHtml = btn.html();
+	const ids = getSelectedIds();
+
+	if (ids.length === 0)
+		return infoAlert("Select at least one record to download.");
+
+	btn.html(`<i class="fa fa-spinner fa-spin me-1" style="color:white;"></i> Preparing...`);
+	btn.prop('disabled', true);
+
+	$.ajax({
+		url: '/Report/DownloadReports',
+		type: 'POST',
+		data: { ids: ids.join(',') },
+		success: function (result) {
+			if (!result.isError && result.redirectUrl) {
+				const fileUrl = result.redirectUrl.toLowerCase();
+
+				if (fileUrl.endsWith('.zip')) {
+					triggerFileDownload(fileUrl);
+				} else {
+					const newTab = window.open(fileUrl, '_blank');
+					triggerFileDownload(fileUrl);
+					if (newTab) newTab.focus();
+				}
+			} else {
+				errorAlert(result.message || "Error preparing bulk download");
+			}
+		},
+		error: function () {
+			errorAlert("An unexpected error occurred.");
+		},
+		complete: function () {
+			setTimeout(() => {
+				btn.html(originalHtml);
+				btn.prop('disabled', false);
+			}, 4000);
+		}
+	});
+});
+
+function triggerFileDownload(url) {
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = ''; 
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
 }
 
 $('#select-all').change(function () {
@@ -406,27 +494,34 @@ $('#bulkDelete').click(function () {
 	//hideBulkActions();
 });
 
-$('#bulkDownload').click(function () {
-	const btn = $(this);
-	const originalHtml = btn.html();
-	const ids = getSelectedIds();
 
-	if (ids.length === 0) return infoAlert("Select at least one record to download.");
-
-	btn.html(`<i class="fa fa-spinner fa-spin me-1" style="color:white;"></i> Downloading...`);
-	btn.prop('disabled', true);
-
-	window.location.href = '/Report/DownloadReports?ids=' + ids.join(',');
-
-	setTimeout(() => {
-		btn.html(originalHtml);
-		btn.prop('disabled', false);
-		//hideBulkActions();
-	}, 5000);
-});
 
 function hideBulkActions() {
 	$('#bulkActions').addClass('hide-important');
 	$('#select-all').prop('checked', false);
 	$('.row-checkbox').prop('checked', false);
+}
+function makeUserAdmin() {
+	const userId = $('#userIdToMakeId').val();
+	if (!userId) {
+		errorAlert("Invalid user ID");
+		return;
+	}
+
+	$.ajax({
+		url: '/Admin/MakeUserAdmin',
+		type: 'POST',
+		data: { userId: userId },
+		success: function (response) {
+			if (!response.isError) {
+				var url = location.href;
+				newSuccessAlert(response.msg, url);
+			} else {
+				errorAlert(response.msg);
+			}
+		},
+		error: function () {
+			errorAlert("An error occurred while making user admin.");
+		}
+	});
 }

@@ -27,7 +27,7 @@ namespace Data.ViewModels
                 return GetEnumDescription(PassWordType);
             }
         }
-
+        public bool IsAdmin { get; set; }
         private static string GetEnumDescription(Enum value)
         {
             FieldInfo? field = value.GetType().GetField(value.ToString());

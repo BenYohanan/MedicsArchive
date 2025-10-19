@@ -55,7 +55,13 @@
 								{
 									<tr>
 										<td></td>
-										<td>@applicationUser.FullName</td>
+										<td>
+											@applicationUser.FullName
+											@if (applicationUser.IsAdmin)
+											{
+												<span class="badge bg-primary ms-2" style="font-size: 0.7rem;">Admin</span>
+											}
+										</td>
 										<td>@applicationUser.Email</td>
 										<td>@applicationUser.PhoneNumber</td>
 										<td>
@@ -81,6 +87,9 @@
 										</td>
 										<td>
 											<div class="action-icon d-inline-flex">
+												<a href="javascript:void(0);" onclick="openMakeAdminModal('@applicationUser.Id')" title="Make Admin">
+													<i class="ti ti-shield-check"></i>
+												</a>
 												<a href="javascript:void(0);" onclick="openChangeTypeModal('@applicationUser.Id')" title="Change Duration"><i class="ti ti-clock-edit"></i></a>
 												<a href="javascript:void(0);" onclick="openExtendDurationModal('@applicationUser.Id')" title="Extend Duration"><i class="ti ti-calendar-plus"></i></a>
 												<a href="javascript:void(0);" onclick="openChangePasswordModal('@applicationUser.Id')" title="Change Password"><i class="ti ti-lock-open"></i></a>
@@ -165,7 +174,7 @@
 				<p class="mb-3">You want to delete all the marked items, this cant be undone once you delete.</p>
 				<div class="d-flex justify-content-center">
 					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
-					<a href="clients.html" class="btn btn-danger">Yes, Delete</a>
+					<a href="#" class="btn btn-danger">Yes, Delete</a>
 				</div>
 			</div>
 		</div>
@@ -250,3 +259,23 @@
 		</div>
 	</div>
 </div>
+<!-- Make admin Modal -->
+<div class="modal fade" id="makeAdmin_modal">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-body text-center">
+				<span class="avatar avatar-xl bg-transparent-warning text-warning mb-3">
+					<i class="ti ti-shield-check fs-36"></i>
+				</span>
+				<h4 class="mb-1">Make Admin</h4>
+				<input type="hidden" id="userIdToMakeId" />
+				<p class="mb-3">Are you sure you want to make this user an admin</p>
+				<div class="d-flex justify-content-center">
+					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
+					<a onclick="makeUserAdmin()" class="btn btn-warning">Proceed</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- /Make admin Modal -->

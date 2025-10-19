@@ -93,9 +93,12 @@ namespace Service.Helpers
         }
         public List<ApplicationUserViewModel> GetUsers()
         {
-            var users = _userManager.GetUsersInRoleAsync(SeedItems.UserRole).Result;
+            var adminUsers = _userManager.GetUsersInRoleAsync(SeedItems.AdminRole).Result;
+            var normalUsers = _userManager.GetUsersInRoleAsync(SeedItems.UserRole).Result;
 
-            return [.. users.Select(r =>
+            var allUsers = adminUsers.Concat(normalUsers).DistinctBy(u => u.Id).ToList();
+
+            return [.. allUsers.Select(r =>
             {
                 var dateRegistered = r.DateRegistered ?? DateTime.Now;
                 DateTime? defaultExpiry = null;
@@ -110,6 +113,8 @@ namespace Service.Helpers
                 var isExpired = r.PasswordExpiryDate.HasValue && DateTime.UtcNow > r.PasswordExpiryDate.Value;
                 var isExtended = r.PasswordExpiryDate.HasValue && defaultExpiry.HasValue && r.PasswordExpiryDate.Value > defaultExpiry.Value;
 
+                bool isAdmin = adminUsers.Any(a => a.Id == r.Id);
+
                 return new ApplicationUserViewModel
                 {
                     Id = r.Id,
@@ -120,10 +125,12 @@ namespace Service.Helpers
                     PassWordType = r.PassWordType,
                     PasswordExpiryDate = r.PasswordExpiryDate,
                     IsPasswordExpired = isExpired,
-                    IsExtended = isExtended
+                    IsExtended = isExtended,
+                    IsAdmin = isAdmin
                 };
             })];
         }
+
 
     }
 }
