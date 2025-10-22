@@ -44,14 +44,22 @@
 							</div>
 						</div>
 
-						<div class="col-md-3">
+						<div class="col-md-2">
 							<label class="form-label">Study Date From</label>
 							<input type="date" id="studyDateFrom" class="form-control" />
 						</div>
 
-						<div class="col-md-3">
+						<div class="col-md-2">
 							<label class="form-label">Study Date To</label>
 							<input type="date" id="studyDateTo" class="form-control" />
+						</div>
+						<div class="col-md-2">
+							<label class="form-label">Gender</label>
+							<select id="genderFilter" class="form-control select">
+								<option value="">All</option>
+								<option value="M">Male</option>
+								<option value="F">Female</option>
+							</select>
 						</div>
 
 						<div class="col-md-3 d-flex justify-content-start gap-2">
@@ -87,7 +95,10 @@
 										<input class="form-check-input" type="checkbox" id="select-all">
 									</div>
 								</th>
-								<th>Company</th>
+								@if (isAdmin)
+								{
+									<th>Company</th>
+								}
 								<th>Patient Details</th>
 								<th>Date Uploaded</th>
 								<th>Study Date</th>
@@ -115,7 +126,12 @@
 												<input class="form-check-input row-checkbox" type="checkbox" value="@report.Id">
 											</div>
 										</td>
-										<td>@report.Institution</td>
+
+										@if (isAdmin)
+										{
+											<td>@report.Institution</td>
+										}
+
 										<td>
 											<div class="d-flex align-items-center file-name-icon">
 												<div class="">
@@ -128,8 +144,11 @@
 												</div>
 											</div>
 										</td>
+
 										<td>@report.DateCreated</td>
+
 										<td>@report.StudyDate</td>
+
 										<td>
 											@if (!string.IsNullOrEmpty(exam))
 											{
@@ -146,6 +165,7 @@
 												</div>
 											}
 										</td>
+
 										<td>
 											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@clinicalInformation">
 												@if (!string.IsNullOrEmpty(clinicalInformation))
@@ -156,29 +176,29 @@
 												}
 											</a>
 										</td>
-										
-										<td>
+
+										<td data-full-findings="@findings">
 											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@findings">
 												@if (!string.IsNullOrEmpty(findings))
 												{
-													@Html.Raw(findings.Length > 20
+															@Html.Raw(findings.Length > 20
 																				? $"{findings.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
 																				: findings)
-												}
+																				}
 											</a>
 										</td>
 
-										<td>
+										<td data-full-conclusion="@conclusion">
 											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@conclusion">
 												@if (!string.IsNullOrEmpty(conclusion))
 												{
 													@Html.Raw(conclusion.Length > 20
 																				? $"{conclusion.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
 																				: conclusion)
-												}
+																				}
 											</a>
 										</td>
-										
+
 										@if (isAdmin)
 										{
 											<td>

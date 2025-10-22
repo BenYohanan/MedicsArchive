@@ -31,7 +31,7 @@ namespace Service.Helpers
             _db = db;
             _configuration = configuration;
             _logger = logger;
-            _apiKey = configuration["OpenAI:ApiKey"];
+            _apiKey = configuration["OpenAI:ApiKey"] ?? "";
         }
 
         public async Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId)

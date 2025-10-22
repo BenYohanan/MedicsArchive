@@ -306,6 +306,7 @@ $('#filterBtn').click(function () {
 	const maxAge = parseInt($('#maxAge').val()) || 200;
 	const dateFrom = $('#studyDateFrom').val() ? new Date($('#studyDateFrom').val()) : null;
 	const dateTo = $('#studyDateTo').val() ? new Date($('#studyDateTo').val()) : null;
+	const gender = $('#genderFilter').val().toUpperCase();
 
 	function parseDate(str) {
 		if (!str) return null;
@@ -318,25 +319,27 @@ $('#filterBtn').click(function () {
 	}
 
 	$('table tbody tr').each(function () {
-		const age = parseInt($(this).find('td:nth-child(3) span:contains("Age")').text().replace(/\D/g, '')) || 0;
-		const studyDateStr = $(this).find('td:nth-child(5)').text().trim(); 
+		const age = parseInt($(this).find('span:contains("Age:")').text().replace(/\D/g, '')) || 0;
+		const studyDateStr = $(this).find('td:nth-child(5)').text().trim();
 		const studyDate = parseDate(studyDateStr);
+		const genderText = $(this).find('span:contains("Gender:")').text().trim().toUpperCase();
 
 		let show = true;
 
 		if (age < minAge || age > maxAge) show = false;
 		if (dateFrom && studyDate && studyDate < dateFrom) show = false;
 		if (dateTo && studyDate && studyDate > dateTo) show = false;
+		if (gender && !genderText.includes(`GENDER: ${gender}`)) show = false;
 
 		$(this).toggle(show);
 	});
 });
 
-// Reset filters
 $('#resetBtn').click(function () {
-	$('#minAge, #maxAge, #studyDateFrom, #studyDateTo').val('');
+	$('#minAge, #maxAge, #studyDateFrom, #studyDateTo, #genderFilter').val('');
 	$('table tbody tr').show();
 });
+
 
 function openExtendDurationModal(userId) {
 	$('#userIdForExtension').val(userId);

@@ -3,7 +3,6 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 using MimeKit.Text;
-using System.ComponentModel.DataAnnotations;
 
 namespace Service.Helpers
 {
@@ -18,17 +17,17 @@ namespace Service.Helpers
         private readonly IConfiguration _emailConfiguration;
         private readonly string? address;
         private readonly string? server;
-        private readonly int? port;
+        private readonly int port;
         private readonly string? password;
-        private readonly string companyEmail = string.Empty;
+        private readonly string? companyEmail = string.Empty;
         public EmailService(IConfiguration configuration)
         {
             _emailConfiguration = configuration;
             address = _emailConfiguration["EmailConfiguration:SmtpUsername"];
             server = _emailConfiguration["EmailConfiguration:SmtpServer"];
-            port = int.Parse(_emailConfiguration["EmailConfiguration:SmtpPort"]);
+            port = int.Parse(_emailConfiguration["EmailConfiguration:SmtpPort"] ?? "");
             password = _emailConfiguration["EmailConfiguration:SmtpPassword"];
-            companyEmail = _emailConfiguration["EmailConfiguration:CompanyEmail"] ?? "okoronkwomarvelous@hotmail.com";
+            companyEmail = _emailConfiguration["EmailConfiguration:CompanyEmail"];
         }
         
         public void SendEmail(string toEmail, string subject, string message)
@@ -40,20 +39,20 @@ namespace Service.Helpers
                 Address = address
             };
 
-            List<EmailAddress> fromAddressList = new List<EmailAddress>
-            {
+            List<EmailAddress> fromAddressList =
+            [
                         fromAddress
-            };
-            EmailAddress toAddress = new EmailAddress()
+            ];
+            EmailAddress toAddress = new()
             {
                 Address = toEmail
             };
-            List<EmailAddress> toAddressList = new List<EmailAddress>
-            {
+            List<EmailAddress> toAddressList =
+            [
                     toAddress
-            };
+            ];
 
-            EmailMessage emailMessage = new EmailMessage()
+            EmailMessage emailMessage = new()
             {
                 FromAddresses = fromAddressList,
                 ToAddresses = toAddressList,
@@ -84,7 +83,6 @@ namespace Service.Helpers
 
             if (!string.IsNullOrEmpty(emailMessage.CompanyName) && !string.IsNullOrEmpty(emailMessage.CompanyEmail))
             {
-                message.Cc.Add(new MailboxAddress(emailMessage.CompanyName, emailMessage.CompanyEmail));
                 message.ReplyTo.Add(new MailboxAddress(emailMessage.CompanyName, emailMessage.CompanyEmail));
             }
             
@@ -96,11 +94,10 @@ namespace Service.Helpers
             };
             if (message.To.Any(f => f.Name == null))
             {
-                //Be careful that the SmtpClient class is the one from Mailkit not the framework!
                 using (var emailClient = new MailKit.Net.Smtp.SmtpClient())
                 {
                     emailClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
-                    emailClient.Connect(server, (int)port, SecureSocketOptions.Auto); 
+                    emailClient.Connect(server, port, SecureSocketOptions.Auto); 
                     emailClient.AuthenticationMechanisms.Remove("XOAUTH2");
                     emailClient.Authenticate(address,password);
                     emailClient.Send(message);
@@ -111,27 +108,26 @@ namespace Service.Helpers
     }
     public class EmailAddress
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Address { get; set; }
+        public string? Address { get; set; }
     }
     public class EmailMessage
     {
         public EmailMessage()
         {
-            ToAddresses = new List<EmailAddress>();
-            FromAddresses = new List<EmailAddress>();
+            ToAddresses = [];
+            FromAddresses = [];
         }
 
-        [EmailAddress(ErrorMessage = "Invalid email address.")]
         public List<EmailAddress> ToAddresses { get; set; }
 
         public List<EmailAddress> FromAddresses { get; set; }
 
-        public string Subject { get; set; }
+        public string? Subject { get; set; }
 
-        public string Content { get; set; }
-        public string CompanyName { get; set; }
-        public string CompanyEmail { get; set; }
+        public string? Content { get; set; }
+        public string? CompanyName { get; set; }
+        public string? CompanyEmail { get; set; }
     }
 }
