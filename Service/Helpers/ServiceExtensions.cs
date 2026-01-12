@@ -60,12 +60,16 @@ public static class ServiceExtensions
 
         app.UseHangfireServer(options);
 
-        var robotStorage = new SqlServerStorage(app.ApplicationServices.GetService<IConfiguration>().GetConnectionString("DBConnectionHangFire"));
+        var robotStorage = new SqlServerStorage(app.ApplicationServices.GetService<IConfiguration>().GetConnectionString("DBConnectionString"), new SqlServerStorageOptions
+        {
+            SchemaName = "hangfire",
+            JobExpirationCheckInterval = TimeSpan.FromHours(1)
+        });
         JobStorage.Current = robotStorage;
 
         var dashboardOptions = new DashboardOptions
         {
-            Authorization = new[] { new MyAuthorizationFilter() }
+            Authorization = [new MyAuthorizationFilter()]
         };
         app.UseHangfireDashboard("/MedicsHangFire", dashboardOptions, robotStorage);
 
