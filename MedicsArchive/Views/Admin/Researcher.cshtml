@@ -1,281 +1,491 @@
-﻿@model IEnumerable<Data.ViewModels.ApplicationUserViewModel>
+﻿@using Data.ViewModels
+@model Data.ViewModels.IPageListModel<ApplicationUserViewModel>
 @{
     ViewData["Title"] = "Researchers";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <style>
+    body {
+        counter-reset: Serial;
+    }
 
-	body {
-		counter-reset: Serial; /* / Set the Serial counter to 0 /*/
-	}
+    tr td:first-child:before {
+        counter-increment: Serial;
+        content: counter(Serial);
+    }
 
-	tr td:first-child:before {
-		counter-increment: Serial; /* / Increment the Serial counter /*/
-		content: counter(Serial); /*  / Display the counter /*/
-	}
+    .form-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 2rem;
+    }
+
+    .search-form {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .search-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .search-item select {
+            min-width: 140px;
+        }
 </style>
 
-<!-- Page Wrapper -->
 <div class="page-wrapper">
-	<div class="content">
+    <div class="content">
+        <div class="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
+            <div class="my-auto mb-2">
+                <h2 class="mb-1">Researchers</h2>
+                <nav>
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="javascript:void(0);"><i class="ti ti-smart-home"></i></a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            Dashboard
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Researchers</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex my-xl-auto right-content align-items-center flex-wrap ">
+                <div class="mb-2">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#add_User" class="btn btn-primary d-flex align-items-center">
+                        <i class="ti ti-circle-plus me-2"></i>Register
+                    </a>
+                </div>
+            </div>
+        </div>
 
-		<!-- Breadcrumb -->
-		<div class="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
-			<div class="my-auto mb-2">
-				<h2 class="mb-1">Researchers</h2>
-			</div>
-			<div class="d-flex my-xl-auto right-content align-items-center flex-wrap ">
-				<div class="mb-2">
-					<a href="#" data-bs-toggle="modal" data-bs-target="#add_User" class="btn btn-primary d-flex align-items-center"><i class="ti ti-circle-plus me-2"></i>Register</a>
-				</div>
-			</div>
-		</div>
-		<!-- /Breadcrumb -->
-		
-		<!-- Clients list -->
-		<div class="card">
-			<div class="card-body p-0">
-				<div class="custom-datatable-filter table-responsive">
-					<table class="table datatable">
-						<thead class="thead-light">
-							<tr>
-								<th>S/n</th>
-								<th>Full Name</th>
-								<th>Email</th>
-								<th>Phone Number</th>
-								<th>Access Duration</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							@if (Model != null && Model.Count() > 0)
-							{
-								@foreach (var applicationUser in Model)
-								{
-									<tr>
-										<td></td>
-										<td>
-											@applicationUser.FullName
-											@if (applicationUser.IsAdmin)
-											{
-												<span class="badge bg-primary ms-2" style="font-size: 0.7rem;">Admin</span>
-											}
-										</td>
-										<td>@applicationUser.Email</td>
-										<td>@applicationUser.PhoneNumber</td>
-										<td>
-											@applicationUser.PassWordTypeDescription
+        <!-- Search bar - EXACT same as Projects -->
+        <div class="card-box">
+            @using (Html.BeginForm(Model.SearchAction, Model.SearchController, FormMethod.Get, new { @class = "form-inline search-form" }))
+            {
+                <input type="hidden" name="projectId" value="@Context.Request.Query["projectId"]" />
 
-											@if (applicationUser.IsExtended)
-											{
-												<span class="badge bg-primary ms-2" style="font-size: 0.7rem;">Extended</span>
-											}
+                <div class="form-group search-item">
+                    <label class="focus-label">Keyword:</label>
+                    <div class="pl-1">
+                        <div class="form-group">
+                            <input asp-for="Keyword" class="form-control" name="Keyword" placeholder="Search by keyword" />
+                        </div>
+                    </div>
+                </div>
 
-											@if (applicationUser.IsPasswordExpired)
-											{
-												<span class="badge bg-danger ms-2" style="font-size: 0.7rem;">Expired</span>
-											}
-											@if (applicationUser.PasswordExpiryDate.HasValue && applicationUser.PasswordExpiryDate != DateTime.MaxValue)
-											{
-												var daysLeft = (applicationUser.PasswordExpiryDate.Value - DateTime.Now).Days;
-												if (daysLeft > 0)
-												{
-													<span class="badge bg-success ms-2" style="font-size: 0.7rem;">@daysLeft days left</span>
-												}
-											}
-										</td>
-										<td>
-											<div class="action-icon d-inline-flex">
-												<a href="javascript:void(0);" onclick="openMakeAdminModal('@applicationUser.Id')" title="Make Admin">
-													<i class="ti ti-shield-check"></i>
-												</a>
-												<a href="javascript:void(0);" onclick="openChangeTypeModal('@applicationUser.Id')" title="Change Duration"><i class="ti ti-clock-edit"></i></a>
-												<a href="javascript:void(0);" onclick="openExtendDurationModal('@applicationUser.Id')" title="Extend Duration"><i class="ti ti-calendar-plus"></i></a>
-												<a href="javascript:void(0);" onclick="openChangePasswordModal('@applicationUser.Id')" title="Change Password"><i class="ti ti-lock-open"></i></a>
-												<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_modal" title="Delete"><i class="ti ti-trash"></i></a>
-											</div>
+                @if (Model.CanFilterByDateRange)
+                {
+                    <div class="form-group search-item">
+                        <label class="focus-label">From:</label>
+                        <div class="pl-0">
+                            <div class="form-group">
+                                <input asp-for="StartDate" name="StartDate" type="date" class="form-control floating" />
+                            </div>
+                        </div>
+                    </div>
 
-										</td>
+                    <div class="form-group search-item">
+                        <label class="focus-label">To:</label>
+                        <div class="pl-0">
+                            <div class="form-group">
+                                <input asp-for="EndDate" name="EndDate" type="date" class="form-control floating" />
+                            </div>
+                        </div>
+                    </div>
+                }
 
-									</tr>
-								}
-							}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-		<!-- /Clients list -->
-	</div>
+                <div class="mx-md-3 p-1 offset-1">
+                    <button type="submit" class="btn btn-success mx-2" value="Search">Search</button>
+                    <button type="button" class="btn mx-1" style="background-color:#007bff;color:white"
+                            onclick="window.location.href='@Url.Action(Model.SearchAction, Model.SearchController, new { projectId = Context.Request.Query["projectId"] })'">
+                        Reset
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Desktop Table - Exact same wrapper and classes as Projects -->
+        <div class="d-none d-md-block">
+            <div class="card-box">
+                <div class="col-md-12">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>S/N</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Phone Number</th>
+                                    <th>Access Duration</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model?.Model?.Any() == true)
+                                {
+                                    @foreach (var user in Model.Model)
+                                    {
+                                        <tr>
+                                            <td></td>
+                                            <td>
+                                                @user.FullName
+                                                @if (user.IsAdmin)
+                                                {
+                                                    <span class="badge bg-primary ms-2" style="font-size: 0.7rem;">Admin</span>
+                                                }
+                                            </td>
+                                            <td>@user.Email</td>
+                                            <td>@(user.PhoneNumber ?? "—")</td>
+                                            <td>
+                                                @user.PassWordTypeDescription
+
+                                                @if (user.IsExtended)
+                                                {
+                                                    <span class="badge bg-primary ms-2" style="font-size: 0.7rem;">Extended</span>
+                                                }
+
+                                                @if (user.IsPasswordExpired)
+                                                {
+                                                    <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">Expired</span>
+                                                }
+
+                                                @if (user.PasswordExpiryDate.HasValue && user.PasswordExpiryDate != DateTime.MaxValue)
+                                                {
+                                                    var daysLeft = (user.PasswordExpiryDate.Value - DateTime.Now).Days;
+                                                    if (daysLeft > 0)
+                                                    {
+                                                        <span class="badge bg-success ms-2" style="font-size: 0.7rem;">@daysLeft days left</span>
+                                                    }
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="action-icon d-inline-flex">
+                                                    <a class="me-2" href="javascript:void(0);" onclick="openMakeAdminModal('@user.Id')">
+                                                        <i class="ti ti-shield-check"></i>
+                                                    </a>
+                                                    <a class="me-2" href="javascript:void(0);" onclick="openChangeTypeModal('@user.Id')">
+                                                        <i class="ti ti-clock-edit"></i>
+                                                    </a>
+                                                    <a class="me-2" href="javascript:void(0);" onclick="openExtendDurationModal('@user.Id')">
+                                                        <i class="ti ti-calendar-plus"></i>
+                                                    </a>
+                                                    <a class="me-2" href="javascript:void(0);" onclick="openChangePasswordModal('@user.Id')">
+                                                        <i class="ti ti-lock-open"></i>
+                                                    </a>
+                                                    <a href="javascript:void(0);" class="text-danger" data-bs-toggle="modal" data-bs-target="#delete_modal">
+                                                        <i class="ti ti-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            No researchers found
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile view - exact same card layout as Projects, adapted for researchers -->
+        <div class="d-block d-md-none">
+            <div class="row">
+                @if (Model?.Model?.Any() == true)
+                {
+                    @foreach (var user in Model.Model)
+                    {
+                        <div class="col-xxl-3 col-lg-4 col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <h6>@user.FullName</h6>
+                                        <div class="dropdown">
+                                            <a href="javascript:void(0);" class="d-inline-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="ti ti-dots-vertical"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end p-3">
+                                                <li>
+                                                    <a class="dropdown-item rounded-1" href="javascript:void(0);" onclick="openMakeAdminModal('@user.Id')">
+                                                        <i class="ti ti-shield-check me-2"></i>Make Admin
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item rounded-1" href="javascript:void(0);" onclick="openChangeTypeModal('@user.Id')">
+                                                        <i class="ti ti-clock-edit me-2"></i>Change Duration
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item rounded-1" href="javascript:void(0);" onclick="openExtendDurationModal('@user.Id')">
+                                                        <i class="ti ti-calendar-plus me-2"></i>Extend Duration
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item rounded-1" href="javascript:void(0);" onclick="openChangePasswordModal('@user.Id')">
+                                                        <i class="ti ti-lock-open me-2"></i>Change Password
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item rounded-1 text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_modal">
+                                                        <i class="ti ti-trash me-1"></i>Delete
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 pb-3 border-bottom">
+                                        <p class="text-truncate line-clamp-3 mb-0">
+                                            Email: @user.Email<br>
+                                            Phone: @(user.PhoneNumber ?? "Not provided")
+                                        </p>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                                        <div class="d-flex align-items-center file-name-icon">
+                                            <a href="javascript:void(0);" class="avatar avatar-sm avatar-rounded flex-shrink-0">
+                                                <img src="~/template/assets/img/users/user-39.jpg" class="img-fluid" alt="img">
+                                            </a>
+                                            <div class="ms-2">
+                                                <h6 class="fw-normal fs-12">@user.FullName</h6>
+                                                <span class="fs-12 fw-normal">Researcher</span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <span class="fs-12 fw-normal">Registered</span>
+                                                <p class="mb-0 fs-12">@user.DateRegistered?.ToString("dd-MM-yyyy") ?? "N/A"</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <span class="avatar avatar-sm avatar-rounded bg-success-transparent flex-shrink-0 me-2">
+                                                <i class="ti ti-checklist text-success fs-16"></i>
+                                            </span>
+                                            <p>
+                                                <small>Access:</small>
+                                                <span class="text-dark">@user.PassWordTypeDescription</span>
+                                            </p>
+                                        </div>
+                                        <div class="d-flex align-items-center flex-wrap gap-2">
+                                            @if (user.IsAdmin)
+                                            {
+                                                <span class="badge bg-primary">Admin</span>
+                                            }
+                                            @if (user.IsExtended)
+                                            {
+                                                <span class="badge bg-primary">Extended</span>
+                                            }
+                                            @if (user.IsPasswordExpired)
+                                            {
+                                                <span class="badge bg-danger">Expired</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-5 text-muted">
+                        No researchers found
+                    </div>
+                }
+                <div class="col-md-12">
+                    <div class="text-center mb-4">
+                        <a href="#" class="btn btn-primary"><i class="ti ti-loader-3 me-1"></i>Load More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @Html.Partial("_Pager", Model.Model)
+    </div>
 </div>
-<!-- /Page Wrapper -->
-<!-- Add Client -->
+
+<!-- ====================== ALL RESEARCHER MODALS ====================== -->
+<!-- Add User Modal -->
 <div class="modal fade" id="add_User">
-	<div class="modal-dialog modal-dialog-centered modal-md">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="modal-title">Register User</h4>
-				<button type="button" class="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
-					<i class="ti ti-x"></i>
-				</button>
-			</div>
-			<div class="modal-body pb-0 ">
-				<div class="row">
-					<div class="col-md-12">
-						<div class="mb-3">
-							<label class="form-label">Full Name <span class="text-danger"> *</span></label>
-							<input type="text" class="form-control" id="fullName" />
-						</div>
-					</div>
-
-					<div class="col-md-12">
-						<div class="mb-3">
-							<label class="form-label">Email<span class="text-danger"> *</span></label>
-							<input type="text" class="form-control" id="email" />
-						</div>
-					</div>
-					<div class="col-md-12">
-						<div class="mb-3">
-							<label class="form-label">Phone Number</label>
-							<input type="text" class="form-control" id="phone" />
-						</div>
-					</div>
-					<div class="col-md-12">
-						<div class="mb-3 ">
-							<label class="form-label">Log In Duration <span class="text-danger"> *</span></label>
-							<select class="select" id="duration">
-								<option>Select</option>
-								<option>Two Weeks</option>
-								<option>One Week</option>
-								<option>Never</option>
-							</select>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
-				<button type="submit" onclick="registerUser()" id="submit_btn" class="btn btn-primary">Save </button>
-			</div>
-		</div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Register User</h4>
+                <button type="button" class="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+            <div class="modal-body pb-0">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name <span class="text-danger"> *</span></label>
+                            <input type="text" class="form-control" id="fullName" />
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label class="form-label">Email<span class="text-danger"> *</span></label>
+                            <input type="text" class="form-control" id="email" />
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phone" />
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="mb-3 ">
+                            <label class="form-label">Log In Duration <span class="text-danger"> *</span></label>
+                            <select class="select" id="duration">
+                                <option>Select</option>
+                                <option>Two Weeks</option>
+                                <option>One Week</option>
+                                <option>Never</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" onclick="registerUser()" id="submit_btn" class="btn btn-primary">Save </button>
+            </div>
+        </div>
+    </div>
 </div>
-<!-- /Add Client -->
+
 <!-- Delete Modal -->
 <div class="modal fade" id="delete_modal">
-	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-			<div class="modal-body text-center">
-				<span class="avatar avatar-xl bg-transparent-danger text-danger mb-3">
-					<i class="ti ti-trash-x fs-36"></i>
-				</span>
-				<h4 class="mb-1">Confirm Delete</h4>
-				<p class="mb-3">You want to delete all the marked items, this cant be undone once you delete.</p>
-				<div class="d-flex justify-content-center">
-					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
-					<a href="#" class="btn btn-danger">Yes, Delete</a>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <span class="avatar avatar-xl bg-transparent-danger text-danger mb-3">
+                    <i class="ti ti-trash-x fs-36"></i>
+                </span>
+                <h4 class="mb-1">Confirm Delete</h4>
+                <p class="mb-3">You want to delete all the marked items, this cant be undone once you delete.</p>
+                <div class="d-flex justify-content-center">
+                    <a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-danger">Yes, Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<!-- /Delete Modal -->
+
 <!-- Change Password Type Modal -->
 <div class="modal fade" id="change_password_type_modal">
-	<div class="modal-dialog modal-dialog-centered modal-md">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="modal-title">Change Password Type</h4>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-					<i class="ti ti-x"></i>
-				</button>
-			</div>
-			<div class="modal-body">
-				<input type="hidden" id="userIdForType" />
-				<div class="mb-3">
-					<label class="form-label">Select New Duration</label>
-					<select class="select" id="newPassType">
-						<option value="">Select</option>
-						<option value="TwoWeeks">Two Weeks</option>
-						<option value="OneWeek">One Week</option>
-						<option value="DoNotExpire">Do Not Expire</option>
-					</select>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" id="change_type_btn" class="btn btn-primary" onclick="changePasswordType()">Save</button>
-			</div>
-		</div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Change Password Type</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="userIdForType" />
+                <div class="mb-3">
+                    <label class="form-label">Select New Duration</label>
+                    <select class="select" id="newPassType">
+                        <option value="">Select</option>
+                        <option value="TwoWeeks">Two Weeks</option>
+                        <option value="OneWeek">One Week</option>
+                        <option value="DoNotExpire">Do Not Expire</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="change_type_btn" class="btn btn-primary" onclick="changePasswordType()">Save</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Change Password Modal -->
 <div class="modal fade" id="change_password_modal">
-	<div class="modal-dialog modal-dialog-centered modal-md">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="modal-title">Change Password</h4>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-					<i class="ti ti-x"></i>
-				</button>
-			</div>
-			<div class="modal-body">
-				<input type="hidden" id="userIdForPassword" />
-				<div class="mb-3">
-					<label class="form-label">New Password</label>
-					<input type="password" class="form-control" id="newPassword" placeholder="Enter new password" />
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" id="change_pass_btn" class="btn btn-primary" onclick="changePassword()">Change</button>
-			</div>
-		</div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Change Password</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="userIdForPassword" />
+                <div class="mb-3">
+                    <label class="form-label">New Password</label>
+                    <input type="password" class="form-control" id="newPassword" placeholder="Enter new password" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="change_pass_btn" class="btn btn-primary" onclick="changePassword()">Change</button>
+            </div>
+        </div>
+    </div>
 </div>
-<!-- Extend Password Duration Modal -->
+
+<!-- Extend Duration Modal -->
 <div class="modal fade" id="extend_duration_modal">
-	<div class="modal-dialog modal-dialog-centered modal-md">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="modal-title">Extend Password Duration</h4>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-					<i class="ti ti-x"></i>
-				</button>
-			</div>
-			<div class="modal-body">
-				<input type="hidden" id="userIdForExtension" />
-				<div class="mb-3">
-					<label class="form-label">Add Days</label>
-					<input type="number" id="extraDays" class="form-control" placeholder="Enter number of days to add"/>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="extendPasswordDuration()">Extend</button>
-			</div>
-		</div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Extend Password Duration</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="userIdForExtension" />
+                <div class="mb-3">
+                    <label class="form-label">Add Days</label>
+                    <input type="number" id="extraDays" class="form-control" placeholder="Enter number of days to add" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-light border me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="extendPasswordDuration()">Extend</button>
+            </div>
+        </div>
+    </div>
 </div>
-<!-- Make admin Modal -->
+
+<!-- Make Admin Modal -->
 <div class="modal fade" id="makeAdmin_modal">
-	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-			<div class="modal-body text-center">
-				<span class="avatar avatar-xl bg-transparent-warning text-warning mb-3">
-					<i class="ti ti-shield-check fs-36"></i>
-				</span>
-				<h4 class="mb-1">Make Admin</h4>
-				<input type="hidden" id="userIdToMakeId" />
-				<p class="mb-3">Are you sure you want to make this user an admin</p>
-				<div class="d-flex justify-content-center">
-					<a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
-					<a onclick="makeUserAdmin()" class="btn btn-warning">Proceed</a>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <span class="avatar avatar-xl bg-transparent-warning text-warning mb-3">
+                    <i class="ti ti-shield-check fs-36"></i>
+                </span>
+                <h4 class="mb-1">Make Admin</h4>
+                <input type="hidden" id="userIdToMakeId" />
+                <p class="mb-3">Are you sure you want to make this user an admin</p>
+                <div class="d-flex justify-content-center">
+                    <a href="javascript:void(0);" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</a>
+                    <a onclick="makeUserAdmin()" class="btn btn-warning">Proceed</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<!-- /Make admin Modal -->

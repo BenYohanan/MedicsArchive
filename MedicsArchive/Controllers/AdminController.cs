@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Service.Helpers;
+using X.PagedList.Extensions;
 
 namespace MedicsArchive.Controllers
 {
@@ -97,12 +98,43 @@ namespace MedicsArchive.Controllers
             return ResponseHelper.JsonSuccess("User registered successfully");
         }
 
+        //[HttpGet]
+        //public IActionResult Researcher()
+        //{
+        //    var users = _userHelper.GetUsers();
+        //    return View(users);
+        //}
+
         [HttpGet]
-        public IActionResult Researcher()
+        public IActionResult Researcher(IPageListModel<ApplicationUserViewModel> model, int page = 1)
         {
+            // Get all users (assuming _userHelper.GetUsers() returns IEnumerable<ApplicationUser>)
             var users = _userHelper.GetUsers();
-            return View(users);
+
+            // Apply keyword search if provided
+            if (!string.IsNullOrWhiteSpace(model.Keyword))
+            {
+                var keyword = model.Keyword.Trim().ToLower();
+                users = users.Where(u =>
+                    (u.FullName?.ToLower().Contains(keyword) ?? false) ||
+                    (u.Email?.ToLower().Contains(keyword) ?? false) ||
+                    (u.PhoneNumber?.Contains(keyword) ?? false)
+                ).ToList(); // materialize after filter for simplicity
+            }
+
+            // Convert to paged list (X.PagedList works with IEnumerable too)
+            var pagedUsers = users.ToPagedList(page, 15); // 15 per page - change if needed
+
+            // Build the model exactly like in your ProjectController
+            model.Model = pagedUsers;
+            model.SearchAction = "Researcher";
+            model.SearchController = "Admin";
+            model.CanFilterByDateRange = false; // set true later if you want date filter
+
+            return View(model);
         }
+
+
 
         [HttpPost]
         public async Task<IActionResult> ChangePasswordType(string userId, string newType)
