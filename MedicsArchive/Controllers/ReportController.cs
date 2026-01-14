@@ -1,5 +1,6 @@
 ﻿using Data.DbContext;
 using Data.Models;
+using Data.ViewModels;
 using MedicsArchive.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,12 +29,15 @@ namespace MedicsArchive.Controllers
         }
 
         [HttpGet]
-		public IActionResult Index()
+		public IActionResult Index(IPageListModel<ReportViewModel> model, int page = 1)
 		{
 			var isAdmin = User.IsInRole(SeedItems.AdminRole);
 			ViewBag.IsAdmin = isAdmin;
-			var data = reportHelper.PatientReports(isAdmin);
-			return View(data);
+			var reports = reportHelper.PatientReports(isAdmin, model, page);
+			model.Model = reports;
+			model.SearchAction = "Index";
+			model.SearchController = "Report";
+			return View(model);
 		}
 
 		[HttpPost]

@@ -5,6 +5,8 @@ using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using Microsoft.AspNetCore.Hosting;
 using SelectPdf;
+using X.PagedList;
+using X.PagedList.Extensions;
 
 namespace Service.Helpers
 {
@@ -12,6 +14,7 @@ namespace Service.Helpers
 	{
         string CreateFileServices(string site, string fileName);
         bool ExtractPatientDataFromPdfs(IEnumerable<string> filePaths, bool isAdmin);
+		IPagedList<ReportViewModel> PatientReports(bool isAdmin, IPageListModel<ReportViewModel> model, int page);
 		List<ReportViewModel> PatientReports(bool isAdmin);
 	}
 
@@ -50,6 +53,82 @@ namespace Service.Helpers
 				Id = r.Id
 			})];
 		}
+
+		public IPagedList<ReportViewModel> PatientReports(bool isAdmin,IPageListModel<ReportViewModel> model,int page)
+		{
+			var query = db.Reports
+				.Where(x => x.Active)
+				.AsQueryable();
+
+			if (!isAdmin)
+			{
+				query = query.Where(x => x.Status != Status.Rejected);
+			}
+
+			if (!string.IsNullOrWhiteSpace(model.Keyword))
+			{
+				var key = model.Keyword.ToLower();
+
+				query = query.Where(p =>
+					(p.PatientName ?? "").ToLower().Contains(key) ||
+					(p.Sex ?? "").ToLower().Contains(key) ||
+					(p.Exam ?? "").ToLower().Contains(key) ||
+					(p.Institution ?? "").ToLower().Contains(key) ||
+					(p.StudyDescription ?? "").ToLower().Contains(key) ||
+					(p.ClinicalInformation ?? "").ToLower().Contains(key) ||
+					(p.Conclusion ?? "").ToLower().Contains(key)
+				);
+			}
+
+			if (model.StudyFromDate.HasValue)
+			{
+				query = query.Where(p => p.StudyDate >= model.StudyFromDate.Value);
+			}
+
+			if (model.StudyToDate.HasValue)
+			{
+				query = query.Where(p => p.StudyDate <= model.StudyToDate.Value);
+			}
+
+			if (model.AgeFrom.HasValue)
+			{
+				query = query.Where(p => p.Age >= model.AgeFrom.Value);
+			}
+
+			if (model.AgeTo.HasValue)
+			{
+				query = query.Where(p => p.Age <= model.AgeTo.Value);
+			}
+
+			if (!string.IsNullOrEmpty(model.Gender))
+			{
+				query = query.Where(p => p.Sex == model.Gender);
+			}
+
+			var reports = query
+				.OrderByDescending(x => x.DateCreated)
+				.Select(r => new ReportViewModel
+				{
+					Id = r.Id,
+					PatientID = r.PatientID,
+					PatientName = r.PatientName,
+					DOB = r.DOB.HasValue ? r.DOB.Value.ToString("dd/MM/yyyy") : "",
+					Sex = r.Sex,
+					ClinicalInformation = r.ClinicalInformation,
+					Conclusion = r.Conclusion,
+					Exam = r.Exam,
+					StudyDate = r.StudyDate.HasValue ? r.StudyDate.Value.ToString("dd/MM/yyyy") : "",
+					DateCreated = r.DateCreated.HasValue ? r.DateCreated.Value.ToString("dd/MM/yyyy") : "",
+					Findings = r.StudyDescription,
+					Age = r.Age,
+					Institution = r.Institution,
+					Status = r.Status
+				})
+				.ToPagedList(page, 25);
+
+			return reports;
+		}
+
 
 		public bool ExtractPatientDataFromPdfs(IEnumerable<string> filePaths, bool isAdmin)
 		{

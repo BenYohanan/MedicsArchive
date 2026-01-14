@@ -1,0 +1,101 @@
+﻿@using Data.ViewModels
+@model Data.ViewModels.IIPageListModel
+@{
+   
+  }
+  <style>
+    .form-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 2rem;
+    }
+
+    .search-form {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .search-item {
+        display: flex;
+        align-items: center;
+        gap: 8px; 
+    }
+
+    .search-item select {
+        min-width: 140px; 
+    }
+
+  </style>
+ 
+<div class="card-box">
+    @using (Html.BeginForm(Model.SearchAction, Model.SearchController, FormMethod.Get, new { @class = "form-inline search-form" }))
+    {
+     
+        <div class="form-group search-item">
+            <label class="focus-label">Keyword:</label>
+            <div class=" pl-1">
+                <div class="form-group">
+                    <input asp-for="Keyword" class="form-control" name="Keyword" placeholder="Search by keyword" />
+                </div>
+            </div>
+        </div>
+
+        @if (Model.CanFilterByDateRange)
+        {
+            <div class="form-group search-item">
+                <label class="focus-label">From:</label>
+                <input asp-for="StudyFromDate" type="date" class="form-control" />
+            </div>
+
+            <div class="form-group search-item">
+                <label class="focus-label">To:</label>
+                <input asp-for="StudyToDate" type="date" class="form-control" />
+            </div>
+        }
+
+        <div class="form-group search-item">
+            <label>Age From:</label>
+            <input asp-for="AgeFrom" type="number" class="form-control" />
+        </div>
+
+        <div class="form-group search-item">
+            <label>Age To:</label>
+            <input asp-for="AgeTo" type="number" class="form-control" />
+        </div>
+
+        <div class="form-group search-item">
+            <label class="form-label">Gender</label>
+            <select asp-for="Gender" style="width:100%;" class="form-control select">
+                <option value="">All</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+            </select>
+        </div>
+
+        <div class="mx-md-3 p-1 offset-1">
+            <button type="submit" class="btn btn-success mx-2" value="Search">Search</button>
+            <button type="button" class="btn mx-1" style="background-color:#007bff;color:white"
+                    onclick="window.location.href='@Url.Action(Model.SearchAction, Model.SearchController, new { projectId = Context.Request.Query["projectId"] })'">
+                Reset
+            </button>
+        </div>
+    }
+</div>
+
+<script>
+    function resetSearchFields(button, resetHidden) {
+        var $form = $(button).parents('form');
+
+        $form.find('input[type=text],select').val('');
+        $form.find('input[type=date],select').val('');
+
+        if (resetHidden) {
+            $form.find('input[type=hidden]').val('');
+        }
+
+        return false;
+    }
+</script>

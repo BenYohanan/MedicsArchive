@@ -18,6 +18,7 @@
     </PackageReference>
     <PackageReference Include="NETCore.MailKit" Version="2.1.0" />
     <PackageReference Include="Select.HtmlToPdf.NetCore" Version="25.2.0" />
+	  <PackageReference Include="X.PagedList.Mvc.Core" Version="10.5.9" />
   </ItemGroup>
 
 </Project>

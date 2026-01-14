@@ -1,5 +1,6 @@
 ﻿@using Data.Models
-@model IEnumerable<Data.ViewModels.ReportViewModel>
+@using Data.ViewModels
+@model Data.ViewModels.IPageListModel<ReportViewModel>
 @{
 	ViewData["Title"] = "Results";
 	Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -31,45 +32,8 @@
 				</div>
 			</div>
 		</div>
-
+		@Html.Partial("_PageSearcher", Model)
 		<div class="card">
-			<div class="card mb-3">
-				<div class="card-body">
-					<div class="row align-items-end">
-						<div class="col-md-3">
-							<label class="form-label">Age Range</label>
-							<div class="d-flex gap-2">
-								<input type="number" id="minAge" class="form-control" placeholder="Min Age" />
-								<input type="number" id="maxAge" class="form-control" placeholder="Max Age" />
-							</div>
-						</div>
-
-						<div class="col-md-2">
-							<label class="form-label">Study Date From</label>
-							<input type="date" id="studyDateFrom" class="form-control" />
-						</div>
-
-						<div class="col-md-2">
-							<label class="form-label">Study Date To</label>
-							<input type="date" id="studyDateTo" class="form-control" />
-						</div>
-						<div class="col-md-2">
-							<label class="form-label">Gender</label>
-							<select id="genderFilter" class="form-control select">
-								<option value="">All</option>
-								<option value="M">Male</option>
-								<option value="F">Female</option>
-							</select>
-						</div>
-
-						<div class="col-md-3 d-flex justify-content-start gap-2">
-							<button class="btn btn-primary" id="filterBtn"><i class="ti ti-filter"></i> Filter</button>
-							<button class="btn btn-light" id="resetBtn"><i class="ti ti-restore"></i> Reset</button>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<div id="bulkActions" class="d-flex justify-content-end mb-3 hide-important" style="padding-right: 20px;">
 				<button class="btn btn-success me-2" id="bulkApprove">
 					<i class="fa fa-thumbs-up me-1"></i> Approve Selected
@@ -84,167 +48,170 @@
 					<i class="fa fa-trash me-1"></i> Delete Selected
 				</button>
 			</div>
-
-			<div class="card-body p-0">
-				<div class="custom-datatable-filter table-responsive">
-					<table class="table datatable">
-						<thead class="thead-light">
-							<tr>
-								<th class="no-sort">
-									<div class="form-check form-check-md">
-										<input class="form-check-input" type="checkbox" id="select-all">
-									</div>
-								</th>
-								@if (isAdmin)
-								{
-									<th>Company</th>
-								}
-								<th>Patient Details</th>
-								<th>Date Uploaded</th>
-								<th>Study Date</th>
-								<th>Study Name</th>
-								<th>Clinical Information</th>
-								<th>Findings</th>
-								<th>Conclusion</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							@if (Model != null && Model.Count() > 0)
-							{
-								@foreach (var report in Model)
-								{
-									var conclusion = report.Conclusion;
-									var exam = report.Exam;
-									var clinicalInformation = report.ClinicalInformation;
-									var findings = report.Findings;
-									var patientName = isAdmin ? @report.PatientName : "*********";
-									var patientID = isAdmin ? @report.PatientID : "*********";
+			<div class="d-none d-md-block">
+				<div class="card-box">
+					<div class="col-md-12">
+						<div class="table-responsive">
+							<table class="table table-striped">
+								<thead class="thead-light">
 									<tr>
-										<td>
+										<th class="no-sort">
 											<div class="form-check form-check-md">
-												<input class="form-check-input row-checkbox" type="checkbox" value="@report.Id">
+												<input class="form-check-input" type="checkbox" id="select-all">
 											</div>
-										</td>
-
+										</th>
 										@if (isAdmin)
 										{
-											<td>@report.Institution</td>
+											<th>Company</th>
 										}
-
-										<td>
-											<div class="d-flex align-items-center file-name-icon">
-												<div class="">
-													<h6 class="fw-medium">
-														<a href="javascript:void(0);">@patientName</a>
-													</h6>
-													<span class="fs-12 fw-normal d-block">Patient No: @patientID</span>
-													<span class="fs-12 fw-normal d-block">Age: @report.Age</span>
-													<span class="fs-12 fw-normal d-block">Gender: @report.Sex</span>
-												</div>
-											</div>
-										</td>
-
-										<td>@report.DateCreated</td>
-
-										<td>@report.StudyDate</td>
-
-										<td>
-											@if (!string.IsNullOrEmpty(exam))
-											{
-												var shortText = exam.Length > 20
-												? exam.Substring(0, 20) + "..."
-												: exam;
-
-												<div class="d-flex align-items-center">
-													<p class="fs-14 fw-medium d-flex align-items-center mb-0">@shortText</p>
-													<a href="#" class="ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
-													   title="@exam">
-														<i class="ti ti-info-circle text-info" style="color:#F37438 !important;"></i>
-													</a>
-												</div>
-											}
-										</td>
-
-										<td>
-											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@clinicalInformation">
-												@if (!string.IsNullOrEmpty(clinicalInformation))
-												{
-													@Html.Raw(clinicalInformation.Length > 20
-																				? $"{clinicalInformation.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
-																				: clinicalInformation)
-												}
-											</a>
-										</td>
-
-										<td data-full-findings="@findings">
-											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@findings">
-												@if (!string.IsNullOrEmpty(findings))
-												{
-															@Html.Raw(findings.Length > 20
-																				? $"{findings.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
-																				: findings)
-																				}
-											</a>
-										</td>
-
-										<td data-full-conclusion="@conclusion">
-											<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@conclusion">
-												@if (!string.IsNullOrEmpty(conclusion))
-												{
-													@Html.Raw(conclusion.Length > 20
-																				? $"{conclusion.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
-																				: conclusion)
-																				}
-											</a>
-										</td>
-
-										@if (isAdmin)
-										{
-											<td>
-												<div class="action-icon d-inline-flex">
-													<a href="javascript:void(0);" class="me-2" onclick="printReport('@report.Id')">
-														<i class="ti ti-download"></i>
-													</a>
-
-													@if (report.Status == Status.Approved)
-													{
-														<a href="javascript:void(0);" class="me-2" title="Approved">
-															<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
-														</a>
-													}
-													else
-													{
-														<a href="javascript:void(0);" class="me-2" data-bs-toggle="modal" data-bs-target="#reject_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-down"></i></a>
-														<a href="javascript:void(0);" class="me-2" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
-													}
-													<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_report" onclick="loadReportId('@report.Id')"><i class="ti ti-trash"></i></a>
-												</div>
-											</td>
-										}
-										else
-										{
-											<td>
-												<div class="action-icon d-inline-flex">
-													<a href="javascript:void(0);" class="me-2" onclick="printReport('@report.Id')">
-														<i class="ti ti-download"></i>
-													</a>
-													<a href="javascript:void(0);" class="me-2" title="Approved">
-														<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
-													</a>
-												</div>
-											</td>
-										}
+										<th>Patient Details</th>
+										<th>Date Uploaded</th>
+										<th>Study Date</th>
+										<th>Study Name</th>
+										<th>Clinical Information</th>
+										<th>Findings</th>
+										<th>Conclusion</th>
+										<th></th>
 									</tr>
-								}
-							}
-						</tbody>
-					</table>
+								</thead>
+								<tbody>
+									@if (Model != null && Model.Model.Count() > 0)
+									{
+										@foreach (var report in Model.Model)
+										{
+											var conclusion = report.Conclusion;
+											var exam = report.Exam;
+											var clinicalInformation = report.ClinicalInformation;
+											var findings = report.Findings;
+											var patientName = isAdmin ? @report.PatientName : "*********";
+											var patientID = isAdmin ? @report.PatientID : "*********";
+											<tr>
+												<td>
+													<div class="form-check form-check-md">
+														<input class="form-check-input row-checkbox" type="checkbox" value="@report.Id">
+													</div>
+												</td>
+
+												@if (isAdmin)
+												{
+													<td>@report.Institution</td>
+												}
+
+												<td>
+													<div class="d-flex align-items-center file-name-icon">
+														<div class="">
+															<h6 class="fw-medium">
+																<a href="javascript:void(0);">@patientName</a>
+															</h6>
+															<span class="fs-12 fw-normal d-block">Patient No: @patientID</span>
+															<span class="fs-12 fw-normal d-block">Age: @report.Age</span>
+															<span class="fs-12 fw-normal d-block">Gender: @report.Sex</span>
+														</div>
+													</div>
+												</td>
+
+												<td>@report.DateCreated</td>
+
+												<td>@report.StudyDate</td>
+
+												<td>
+													@if (!string.IsNullOrEmpty(exam))
+													{
+														var shortText = exam.Length > 20
+														? exam.Substring(0, 20) + "..."
+														: exam;
+
+														<div class="d-flex align-items-center">
+															<p class="fs-14 fw-medium d-flex align-items-center mb-0">@shortText</p>
+															<a href="#" class="ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
+															   title="@exam">
+																<i class="ti ti-info-circle text-info" style="color:#F37438 !important;"></i>
+															</a>
+														</div>
+													}
+												</td>
+
+												<td>
+													<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@clinicalInformation">
+														@if (!string.IsNullOrEmpty(clinicalInformation))
+														{
+												@Html.Raw(clinicalInformation.Length > 20
+																								? $"{clinicalInformation.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
+																								: clinicalInformation)
+																								}
+													</a>
+												</td>
+
+												<td data-full-findings="@findings">
+													<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@findings">
+														@if (!string.IsNullOrEmpty(findings))
+														{
+												@Html.Raw(findings.Length > 20
+																								? $"{findings.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
+																								: findings)
+																								}
+													</a>
+												</td>
+
+												<td data-full-conclusion="@conclusion">
+													<a style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#view_data" data-content="@conclusion">
+														@if (!string.IsNullOrEmpty(conclusion))
+														{
+												@Html.Raw(conclusion.Length > 20
+																								? $"{conclusion.Substring(0, 20)}<span style='color:#F37438;'>... See more</span>"
+																								: conclusion)
+																								}
+													</a>
+												</td>
+
+												@if (isAdmin)
+												{
+													<td>
+														<div class="action-icon d-inline-flex">
+															<a href="javascript:void(0);" class="me-2" onclick="printReport('@report.Id')">
+																<i class="ti ti-download"></i>
+															</a>
+
+															@if (report.Status == Status.Approved)
+															{
+																<a href="javascript:void(0);" class="me-2" title="Approved">
+																	<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
+																</a>
+															}
+															else
+															{
+																<a href="javascript:void(0);" class="me-2" data-bs-toggle="modal" data-bs-target="#reject_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-down"></i></a>
+																<a href="javascript:void(0);" class="me-2" data-bs-toggle="modal" data-bs-target="#approve_modal" onclick="loadReportId('@report.Id')"><i class="fa-solid fa-thumbs-up"></i></a>
+															}
+															<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_report" onclick="loadReportId('@report.Id')"><i class="ti ti-trash"></i></a>
+														</div>
+													</td>
+												}
+												else
+												{
+													<td>
+														<div class="action-icon d-inline-flex">
+															<a href="javascript:void(0);" class="me-2" onclick="printReport('@report.Id')">
+																<i class="ti ti-download"></i>
+															</a>
+															<a href="javascript:void(0);" class="me-2" title="Approved">
+																<i class="fa-solid fa-circle-check" style='color:#F37438;'></i>
+															</a>
+														</div>
+													</td>
+												}
+											</tr>
+										}
+									}
+								</tbody>
+							</table>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-		<!-- /Leaves list -->
 	</div>
+	@Html.Partial("_Pager", Model.Model)
 </div>
 <!-- /Page Wrapper -->
 
