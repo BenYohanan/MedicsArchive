@@ -17,7 +17,52 @@
 		counter-increment: Serial; /* / Increment the Serial counter /*/
 		content: counter(Serial); /*  / Display the counter /*/
 	}
+
+	.results-search-bar {
+		display: flex;
+		flex-wrap: nowrap; 
+		align-items: flex-end;
+		gap: 14px;
+		padding: 16px;
+		background: #fff;
+		border-radius: 8px;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+		margin-bottom: 20px;
+	}
+
+	.results-search-item {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		white-space: nowrap;
+	}
+
+	#keywordSearch {
+		width: 180px;
+	}
+
+	#minAge,
+	#maxAge {
+		width: 90px;
+	}
+
+	#studyDateFrom,
+	#studyDateTo {
+		width: 135px;
+	}
+
+	#genderFilter {
+		width: 110px;
+	}
+
+	.results-search-item.ms-2 {
+		margin-left: auto;
+		display: flex;
+		gap: 8px;
+	}
+
 </style>
+
 <!-- Page Wrapper -->
 <div class="page-wrapper">
 	<div class="content">
@@ -32,43 +77,53 @@
 			</div>
 		</div>
 
-		<div class="card">
-			<div class="card mb-3">
-				<div class="card-body">
-					<div class="row align-items-end">
-						<div class="col-md-3">
-							<label class="form-label">Age Range</label>
-							<div class="d-flex gap-2">
-								<input type="number" id="minAge" class="form-control" placeholder="Min Age" />
-								<input type="number" id="maxAge" class="form-control" placeholder="Max Age" />
-							</div>
-						</div>
+			<div class="results-search-bar">
 
-						<div class="col-md-2">
-							<label class="form-label">Study Date From</label>
-							<input type="date" id="studyDateFrom" class="form-control" />
-						</div>
-
-						<div class="col-md-2">
-							<label class="form-label">Study Date To</label>
-							<input type="date" id="studyDateTo" class="form-control" />
-						</div>
-						<div class="col-md-2">
-							<label class="form-label">Gender</label>
-							<select id="genderFilter" class="form-control select">
-								<option value="">All</option>
-								<option value="M">Male</option>
-								<option value="F">Female</option>
-							</select>
-						</div>
-
-						<div class="col-md-3 d-flex justify-content-start gap-2">
-							<button class="btn btn-primary" id="filterBtn"><i class="ti ti-filter"></i> Filter</button>
-							<button class="btn btn-light" id="resetBtn"><i class="ti ti-restore"></i> Reset</button>
-						</div>
-					</div>
+				<div class="results-search-item">
+					<label class="fw-medium">Keyword:</label>
+					<input type="text"
+						   id="keywordSearch"
+						   class="form-control"
+						   placeholder="Search by keyword" />
 				</div>
+
+				<div class="results-search-item">
+					<label class="fw-medium">Age:</label>
+					<input type="number" id="minAge" class="form-control" placeholder="Min" />
+					<input type="number" id="maxAge" class="form-control" placeholder="Max" />
+				</div>
+
+				<div class="results-search-item">
+					<label class="fw-medium">From:</label>
+					<input type="date" id="studyDateFrom" class="form-control" />
+				</div>
+
+				<div class="results-search-item">
+					<label class="fw-medium">To:</label>
+					<input type="date" id="studyDateTo" class="form-control" />
+				</div>
+
+				<div class="results-search-item">
+					<label class="fw-medium">Gender:</label>
+					<select id="genderFilter" class="form-control">
+						<option value="">All</option>
+						<option value="M">Male</option>
+						<option value="F">Female</option>
+					</select>
+				</div>
+
+				<div class="results-search-item ms-2">
+					<button class="btn btn-primary" id="filterBtn">
+						<i class="ti ti-filter"></i> Filter
+					</button>
+
+					<button class="btn btn-light" id="resetBtn">
+						<i class="ti ti-restore"></i> Reset
+					</button>
+				</div>
+
 			</div>
+		<div class="card">
 
 			<div id="bulkActions" class="d-flex justify-content-end mb-3 hide-important" style="padding-right: 20px;">
 				<button class="btn btn-success me-2" id="bulkApprove">
@@ -359,5 +414,28 @@
 			$('#select-all').prop('checked', allChecked);
 			toggleBulkActions();
 		});
+	});
+</script>
+<script>
+	$(document).ready(function () {
+
+		var table = $('.datatable').DataTable();
+
+		$('#keywordSearch').on('keyup', function () {
+			table.search(this.value).draw();
+		});
+
+		$('#filterBtn').on('click', function () {
+			table.search($('#keywordSearch').val()).draw();
+		});
+
+		$('#resetBtn').on('click', function () {
+			$('#keywordSearch').val('');
+			$('#minAge, #maxAge, #studyDateFrom, #studyDateTo').val('');
+			$('#genderFilter').val('');
+
+			table.search('').draw();
+		});
+
 	});
 </script>

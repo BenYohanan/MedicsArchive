@@ -14,6 +14,34 @@
 		counter-increment: Serial; /* / Increment the Serial counter /*/
 		content: counter(Serial); /*  / Display the counter /*/
 	}
+ 
+	.results-search-bar {
+		display: flex;
+		align-items: flex-end;
+		gap: 20px;
+		padding: 16px;
+		background: #fff;
+		border-radius: 8px;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+		margin-bottom: 20px;
+	}
+
+	.results-search-item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+		.results-search-item input {
+			min-width: 240px;
+		}
+
+	.dataTables_filter {
+		display: none !important;
+	}
+
+
+ 
 </style>
 
 <!-- Page Wrapper -->
@@ -32,7 +60,27 @@
 			</div>
 		</div>
 		<!-- /Breadcrumb -->
-		
+		<div class="results-search-bar">
+			<div class="results-search-item">
+				<label class="fw-medium">Keyword:</label>
+				<input type="text"
+					   id="keywordSearch"
+					   class="form-control"
+					   placeholder="Search name, email, phone..." />
+			</div>
+
+			<div class="results-search-item">
+				<button type="button" id="filterBtn" class="btn btn-primary">
+					<i class="ti ti-filter"></i> Filter
+				</button>
+
+				<button type="button" id="resetBtn" class="btn btn-light ms-2">
+					<i class="ti ti-restore"></i> Reset
+				</button>
+			</div>
+		</div>
+
+		<!-- 🔥 SEARCH BAR END -->
 		<!-- Clients list -->
 		<div class="card">
 			<div class="card-body p-0">
@@ -279,3 +327,46 @@
 	</div>
 </div>
 <!-- /Make admin Modal -->
+<script>
+	(function initResearcherSearch() {
+
+		function attachSearch() {
+
+			if (!window.jQuery || !$.fn.DataTable) {
+				return setTimeout(attachSearch, 100);
+			}
+
+			const $table = $('.datatable');
+
+			if (!$table.length || !$.fn.DataTable.isDataTable($table)) {
+				return setTimeout(attachSearch, 100);
+			}
+
+			const table = $table.DataTable();
+
+			$('#keywordSearch').off('.researcherSearch');
+			$('#filterBtn').off('.researcherSearch');
+			$('#resetBtn').off('.researcherSearch');
+
+			$('#keywordSearch').on('keyup.researcherSearch', function () {
+				table.search(this.value).draw();
+			});
+
+			$('#filterBtn').on('click.researcherSearch', function () {
+				table.search($('#keywordSearch').val()).draw();
+			});
+
+			$('#resetBtn').on('click.researcherSearch', function () {
+				$('#keywordSearch').val('');
+				table.search('').draw();
+			});
+		}
+
+		attachSearch();
+
+	})();
+</script>
+
+
+
+
