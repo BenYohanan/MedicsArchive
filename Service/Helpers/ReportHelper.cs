@@ -231,47 +231,51 @@ namespace Service.Helpers
 			};
 			return data;
 		}
-        public string CreateFileServices(string site, string fileName)
-        {
-            var folderToSaveFile = "Report";
-            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, folderToSaveFile);
+		public string CreateFileServices(string site, string fileName)
+		{
+			var folderToSaveFile = "Report";
+			string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, folderToSaveFile);
 
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
+			if (!Directory.Exists(uploadsFolder))
+				Directory.CreateDirectory(uploadsFolder);
 
-            var path = Path.Combine(uploadsFolder, fileName.TrimStart('\\', '/'));
+			var path = Path.Combine(uploadsFolder, fileName.TrimStart('\\', '/'));
 
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
+			if (File.Exists(path))
+				File.Delete(path);
 
-            HtmlToPdf converter = new HtmlToPdf();
-            converter.Options.PdfPageSize = PdfPageSize.A4;
-            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
-            converter.Options.MarginBottom = 20;
-            converter.Options.MarginTop = 20;
-            converter.Options.MarginLeft = 20;
-            converter.Options.MarginRight = 20;
+			var converter = new HtmlToPdf();
 
-            converter.Options.WebPageWidth = 1024;
-            converter.Options.WebPageHeight = 0; 
-            converter.Options.KeepImagesTogether = true;
-            converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
+			converter.Options.PdfPageSize = PdfPageSize.A4;
+			converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+
+			converter.Options.MarginTop = 20;
+			converter.Options.MarginBottom = 20;
+			converter.Options.MarginLeft = 20;
+			converter.Options.MarginRight = 20;
+
+			converter.Options.WebPageWidth = 794;
+			converter.Options.WebPageHeight = 0;
+
+			converter.Options.AllowContentHeightResize = true;
+			converter.Options.ColorSpace = PdfColorSpace.RGB;
+
+			converter.Options.JavaScriptEnabled = false;
+
+			var pdfUrl = site.Contains("?")
+				? site + "&_pdf=" + Guid.NewGuid()
+				: site + "?_pdf=" + Guid.NewGuid();
+
+			var doc = converter.ConvertUrl(pdfUrl);
+			doc.Save(path);
+			doc.Close();
+
+			var pathParts = path.Split(Path.DirectorySeparatorChar);
+			var folderIndex = Array.IndexOf(pathParts, folderToSaveFile);
+			return string.Join("/", pathParts.Skip(folderIndex));
+		}
 
 
-            SelectPdf.PdfDocument doc = converter.ConvertUrl(site);
-            doc.Save(path);
-            doc.Close();
-
-            var pathParts = path.Split(Path.DirectorySeparatorChar);
-            var folderIndex = Array.IndexOf(pathParts, folderToSaveFile);
-            var extractedPath = string.Join("/", pathParts.Skip(folderIndex));
-            return extractedPath;
-        }
-
-    }
+	}
 
 }

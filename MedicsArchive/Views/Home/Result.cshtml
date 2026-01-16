@@ -11,9 +11,15 @@
     <style>
         html, body {
             width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
+            margin: 0;
+            padding: 0;
         }
+
+        .pdf-wrapper {
+            width: 100%;
+            max-width: 100%;
+        }
+
 
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -88,32 +94,34 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="brand">MedImaging Data Bank</div>
-        <div class="subtitle">Confidential Radiology Report</div>
-    </header>
+    <div class="pdf-wrapper">
+        <header>
+            <div class="brand">MedImaging Data Bank</div>
+            <div class="subtitle">Confidential Radiology Report</div>
+        </header>
 
-    <div class="title">Imaging Study Report</div>
+        <div class="title">Imaging Study Report</div>
 
-    <div class="info">
-        <div><span>Patient Name:</span> **********</div>
-        <div><span>Patient ID:</span> **********</div>
-        <div><span>Age:</span> @Model.Age</div>
-        <div><span>Gender:</span> @Model.Sex</div>
-        <div><span>Institution:</span> **********</div>
-        <div><span>Study Date:</span> @Model.StudyDate</div>
+        <div class="info">
+            <div><span>Patient Name:</span> **********</div>
+            <div><span>Patient ID:</span> **********</div>
+            <div><span>Age:</span> @Model.Age</div>
+            <div><span>Gender:</span> @Model.Sex</div>
+            <div><span>Institution:</span> **********</div>
+            <div><span>Study Date:</span> @Model.StudyDate</div>
+        </div>
+
+        <h3>Study Name</h3>
+        <p>@Html.Raw(Model.Exam)</p>
+
+        <h3>Clinical Information</h3>
+        <p>@Html.Raw(Model.ClinicalInformation)</p>
+
+        <h3>Findings</h3>
+        <p>@Html.Raw(Model.Findings)</p>
+
+        <h3>Conclusion</h3>
+        <p>@Html.Raw(Model.Conclusion)</p>
     </div>
-
-    <h3>Study Name</h3>
-    <p>@Html.Raw(Model.Exam)</p>
-
-    <h3>Clinical Information</h3>
-    <p>@Html.Raw(Model.ClinicalInformation)</p>
-
-    <h3>Findings</h3>
-    <p>@Html.Raw(Model.Findings)</p>
-
-    <h3>Conclusion</h3>
-    <p>@Html.Raw(Model.Conclusion)</p>
 </body>
 </html>

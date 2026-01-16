@@ -42,15 +42,6 @@ public static class ServiceExtensions
 
         return services;
     }
-    public class MyAuthorizationFilter : IDashboardAuthorizationFilter
-    {
-        public bool Authorize(DashboardContext context)
-        {
-            var user = context.GetHttpContext().User;
-            return user != null && user.Identity.IsAuthenticated && user.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "SuperAdmin");
-        }
-    }
-
     public static IApplicationBuilder UseHangfireConfiguration(this IApplicationBuilder app)
     {
         var options = new BackgroundJobServerOptions
@@ -66,12 +57,7 @@ public static class ServiceExtensions
             JobExpirationCheckInterval = TimeSpan.FromHours(1)
         });
         JobStorage.Current = robotStorage;
-
-        var dashboardOptions = new DashboardOptions
-        {
-            Authorization = [new MyAuthorizationFilter()]
-        };
-        app.UseHangfireDashboard("/MedicsHangFire", dashboardOptions, robotStorage);
+        app.UseHangfireDashboard("/MedImageHangFire", storage: robotStorage);
 
         return app;
     }
