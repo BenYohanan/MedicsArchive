@@ -4,83 +4,101 @@ using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Service.Helpers;
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ----------------------------------------------------
+// SERVICES
+// ----------------------------------------------------
+
 builder.Services.AddControllersWithViews();
+
 builder.Services.RegisterHelpers();
 builder.Services.ConfigureFormOptions();
 builder.Services.ConfigureForwardedHeaders();
 
-// Register the database context
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnectionString")));
-builder.Services.AddHangfire(config =>
-{
-    config.UseSqlServerStorage(
-        builder.Configuration.GetConnectionString("DBConnectionString"),
-        new SqlServerStorageOptions
-        {
-            SchemaName = "hangfire",
-            JobExpirationCheckInterval = TimeSpan.FromHours(1)
-        }
-    );
-});
+	options.UseSqlServer(
+		builder.Configuration.GetConnectionString("DBConnectionString")));
 
-// Register Identity services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 3;
-    options.Password.RequiredUniqueChars = 0;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-}).AddEntityFrameworkStores<AppDbContext>();
+	options.Password.RequireDigit = false;
+	options.Password.RequiredLength = 3;
+	options.Password.RequiredUniqueChars = 0;
+	options.Password.RequireLowercase = false;
+	options.Password.RequireNonAlphanumeric = false;
+	options.Password.RequireUppercase = false;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
+// ?? OpenAI Service with HttpClientFactory
+builder.Services.AddHttpClient<IOpenAIService, OpenAIService>(client =>
+{
+	client.Timeout = TimeSpan.FromMinutes(3);
+	client.DefaultRequestHeaders.Authorization =
+		new AuthenticationHeaderValue(
+			"Bearer",
+			builder.Configuration["OpenAI:ApiKey"]);
+});
+
+builder.Services.AddHangfire(config =>
+{
+	config.UseSqlServerStorage(
+		builder.Configuration.GetConnectionString("DBConnectionString"),
+		new SqlServerStorageOptions
+		{
+			SchemaName = "hangfire",
+			JobExpirationCheckInterval = TimeSpan.FromHours(1)
+		});
+});
+
+builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
-// Seed the database
+
 using (var scope = app.Services.CreateScope())
 {
-    var serviceProvider = scope.ServiceProvider;
-    try
-    {
-        var dbContext = serviceProvider.GetRequiredService<AppDbContext>();
-        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+	var serviceProvider = scope.ServiceProvider;
 
-        // Ensure the database is created and migrated
-        dbContext.Database.Migrate();
+	try
+	{
+		var dbContext = serviceProvider.GetRequiredService<AppDbContext>();
+		var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+		var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Run the seed logic
-        CoreSeed.SeedData(roleManager, userManager);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error occurred seeding the database: {ex.Message}");
-    }
+		dbContext.Database.Migrate();
+		CoreSeed.SeedData(roleManager, userManager);
+	}
+	catch (Exception ex)
+	{
+		Console.WriteLine($"Error seeding database: {ex.Message}");
+	}
 }
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+	app.UseExceptionHandler("/Home/Error");
+	app.UseHsts();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseAuthentication();
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.UseHangfireConfiguration();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+	name: "default",
+	pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

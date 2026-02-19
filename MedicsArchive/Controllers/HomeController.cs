@@ -49,7 +49,7 @@ namespace MedicsArchive.Controllers
                 StudyDate = report.StudyDate.Value.ToString("dd/MM/yyyy"),
                 DateCreated = report.DateCreated.Value.ToString("dd/MM/yyyy"),
                 Findings = report.StudyDescription,
-                Age = report.Age,
+                Age = report.Age.ToString(),
                 Institution = report.Institution,
                 Status = report.Status,
                 Id = report.Id

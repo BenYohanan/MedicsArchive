@@ -15,7 +15,7 @@
 						<div class="mb-3">
 							<label class="form-label">Choose file(s)</label>
 							<input type="file" class="form-control" id="files" name="files"
-								   accept=".pdf,.docx" multiple />
+								   accept=".pdf,.docx,.doc" multiple />
 							<small class="text-muted text-danger">You can upload up to 15 files (.pdf, .docx)</small>
 						</div>
 					</div>
@@ -44,7 +44,7 @@
 
 		for (const file of files) {
 			const fileType = file.name.split('.').pop().toLowerCase();
-			if (fileType !== "pdf" && fileType !== "docx") {
+			if (fileType !== "pdf" && fileType !== "docx" && fileType != "doc") {
 				infoAlert("Only PDF and DOCX files are allowed.");
 				event.target.value = "";
 				return;

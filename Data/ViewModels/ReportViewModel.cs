@@ -21,7 +21,7 @@ namespace Data.ViewModels
         public string? ClinicalInformation { get; set; }
         public string? Conclusion { get; set; }
         public string? Institution { get; set; }
-        public long? Age { get; set; }
+        public string? Age { get; set; }
         public Status? Status { get; set; }
     }
 }

@@ -43,7 +43,7 @@ namespace MedicsArchive.Controllers
 		[HttpPost]
 		public async Task<JsonResult> UploadFiles(List<IFormFile> files, bool isAdmin)
 		{
-			if (files == null || !files.Any())
+			if (files == null || files.Count == 0)
 			{
 				return ResponseHelper.ErrorMsg();
 			}

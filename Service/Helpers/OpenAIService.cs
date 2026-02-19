@@ -1,266 +1,245 @@
-﻿using Data.DbContext;
+﻿using Aspose.Words;
+using Data.DbContext;
 using Data.Models;
 using Data.ViewModels;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Service.Helpers
 {
-    public interface IOpenAIService
-    {
-        Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId);
-    }
-    public class OpenAIService: IOpenAIService
-    {
-        private readonly AppDbContext _db;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<OpenAIService> _logger;
-        private readonly string _apiKey;
+	public interface IOpenAIService
+	{
+		Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId);
+	}
 
-        public OpenAIService(AppDbContext db, IConfiguration configuration, ILogger<OpenAIService> logger)
-        {
-            _db = db;
-            _configuration = configuration;
-            _logger = logger;
-            _apiKey = configuration["OpenAI:ApiKey"] ?? "";
-        }
+	public class OpenAIService : IOpenAIService
+	{
+		private readonly AppDbContext _db;
+		private readonly ILogger<OpenAIService> _logger;
+		private readonly HttpClient _httpClient;
 
-        public async Task<bool> ExtractPatientDataFromFilesAsync(IEnumerable<string> filePaths, bool isAdmin, string userId)
-        {
-            bool anySuccess = false;
+		public OpenAIService(
+			AppDbContext db,
+			ILogger<OpenAIService> logger,
+			HttpClient httpClient)
+		{
+			_db = db;
+			_logger = logger;
+			_httpClient = httpClient;
+		}
 
-            foreach (var filePath in filePaths)
-            {
-                try
-                {
-                    var patientInfo = await ExtractPatientDataAsync(filePath);
-                    if (patientInfo == null)
-                    {
-                        _logger.LogWarning($"No data extracted from file: {filePath}");
-                        continue;
-                    }
+		public async Task<bool> ExtractPatientDataFromFilesAsync(
+			IEnumerable<string> filePaths,
+			bool isAdmin,
+			string userId)
+		{
+			var semaphore = new SemaphoreSlim(5); 
+			var tasks = new List<Task<bool>>();
 
-                    var report = new Report
-                    {
-                        PatientID = patientInfo.PatientID,
-                        PatientName = patientInfo.PatientName,
-                        DOB = DateTime.ParseExact(patientInfo.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
-                        Sex = patientInfo.Sex,
-                        StudyDescription = patientInfo.Findings,
-                        StudyDate = DateTime.ParseExact(patientInfo.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture),
-                        Exam = patientInfo.Exam,
-                        ClinicalInformation = patientInfo.ClinicalInformation,
-                        Conclusion = patientInfo.Conclusion,
-                        Age = CalculateAge(
-                            DateTime.ParseExact(patientInfo.DOB, "MM/dd/yyyy", CultureInfo.InvariantCulture),
-                            DateTime.ParseExact(patientInfo.StudyDate, "MM/dd/yyyy", CultureInfo.InvariantCulture)),
-                        Institution = patientInfo.Institution,
-                        Status = isAdmin ? Status.Approved : Status.Pending,
-                        UserId = userId
-                    };
+			foreach (var filePath in filePaths)
+			{
+				tasks.Add(ProcessFileAsync(filePath, isAdmin, userId, semaphore));
+			}
 
-                    _db.Reports.Add(report);
-                    await _db.SaveChangesAsync();
+			var results = await Task.WhenAll(tasks);
+			return results.Any(x => x);
+		}
 
-                    _logger.LogInformation($"✅ Successfully saved report for file: {filePath}");
-                    anySuccess = true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"❌ Failed to process file: {filePath}");
-                }
-            }
+		private async Task<bool> ProcessFileAsync(
+			string filePath,
+			bool isAdmin,
+			string userId,
+			SemaphoreSlim semaphore)
+		{
+			await semaphore.WaitAsync();
 
-            return anySuccess;
-        }
+			try
+			{
+				var patientInfo = await ExtractPatientDataAsync(filePath);
+				if (patientInfo == null)
+					return false;
 
+				DateTime.TryParseExact(patientInfo.DOB, "MM/dd/yyyy",
+					CultureInfo.InvariantCulture, DateTimeStyles.None, out var dob);
 
-        private int CalculateAge(DateTime dob, DateTime studyDate)
-        {
-            int age = studyDate.Year - dob.Year;
-            if (studyDate < dob.AddYears(age))
-            {
-                age--;
-            }
-            return age;
-        }
+				DateTime.TryParseExact(patientInfo.StudyDate, "MM/dd/yyyy",
+					CultureInfo.InvariantCulture, DateTimeStyles.None, out var studyDate);
 
-        private async Task<ReportViewModel?> ExtractPatientDataAsync(string filePath)
-        {
-            try
-            {
-                string text = Path.GetExtension(filePath).ToLower() switch
-                {
-                    ".pdf" => ExtractTextFromPdf(filePath),
-                    ".docx" => ExtractTextFromDocx(filePath),
-                    _ => throw new NotSupportedException($"Unsupported file type: {filePath}")
-                };
+				long? age = null;
 
-                return await ParsePatientInfoAsync(text);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error processing file {filePath}");
-                return null;
-            }
-        }
+				if (!string.IsNullOrWhiteSpace(patientInfo.Age) &&
+					long.TryParse(patientInfo.Age, out var parsedAge))
+				{
+					age = parsedAge;
+				}
+				else if (dob != default && studyDate != default)
+				{
+					age = CalculateAge(dob, studyDate);
+				}
 
-        private string ExtractTextFromPdf(string filePath)
-        {
-            using var pdfReader = new PdfReader(filePath);
-            using var pdfDoc = new PdfDocument(pdfReader);
-            string text = string.Empty;
+				var report = new Report
+				{
+					PatientID = patientInfo.PatientID,
+					PatientName = patientInfo.PatientName,
+					DOB = dob == default ? null : dob,
+					Sex = patientInfo.Sex,
+					StudyDescription = patientInfo.Findings,
+					StudyDate = studyDate == default ? null : studyDate,
+					Exam = patientInfo.Exam,
+					ClinicalInformation = patientInfo.ClinicalInformation,
+					Conclusion = patientInfo.Conclusion,
+					Age = age,
+					Institution = patientInfo.Institution,
+					Status = isAdmin ? Status.Approved : Status.Pending,
+					UserId = userId
+				};
 
-            for (int i = 1; i <= pdfDoc.GetNumberOfPages(); i++)
-            {
-                text += PdfTextExtractor.GetTextFromPage(pdfDoc.GetPage(i));
-            }
+				_db.Reports.Add(report);
+				await _db.SaveChangesAsync();
 
-            return text;
-        }
+				_logger.LogInformation($"Processed: {filePath}");
+				return true;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"Failed: {filePath}");
+				return false;
+			}
+			finally
+			{
+				semaphore.Release();
+			}
+		}
 
-        private string ExtractTextFromDocx(string filePath)
-        {
-            StringBuilder text = new StringBuilder();
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, false))
-            {
-                var body = doc.MainDocumentPart.Document.Body;
-                foreach (var para in body.Elements<Paragraph>())
-                {
-                    foreach (var run in para.Elements<Run>())
-                    {
-                        foreach (var textElement in run.Elements<Text>())
-                        {
-                            text.Append(textElement.Text);
-                            text.Append(" ");
-                        }
-                    }
-                    text.AppendLine();
-                }
+		private int CalculateAge(DateTime dob, DateTime studyDate)
+		{
+			int age = studyDate.Year - dob.Year;
+			if (studyDate < dob.AddYears(age))
+				age--;
+			return age;
+		}
 
-                foreach (var table in body.Elements<Table>())
-                {
-                    foreach (var row in table.Elements<TableRow>())
-                    {
-                        foreach (var cell in row.Elements<TableCell>())
-                        {
-                            foreach (var para in cell.Elements<Paragraph>())
-                            {
-                                foreach (var run in para.Elements<Run>())
-                                {
-                                    foreach (var textElement in run.Elements<Text>())
-                                    {
-                                        text.Append(textElement.Text);
-                                        text.Append(" ");
-                                    }
-                                }
-                                text.AppendLine();
-                            }
-                        }
-                    }
-                }
-            }
-            return text.ToString().Trim();
-        }
-        
-        private async Task<ReportViewModel?> ParsePatientInfoAsync(string text)
-        {
-            string systemPrompt = "You are a helpful assistant that extracts structured patient data from text.";
-            string userPrompt = @$"
-                Extract the following fields from the provided document text as a JSON object:
-                - PatientID (or 'Patient ID')
-                - PatientName (or 'Patient Name')
-                - DOB (or 'Date of Birth')
-                - Sex (or 'Gender')
-                - Findings
-                - StudyDate (or 'Study Date')
-                - Exam
-                - ClinicalInformation (or 'Clinical Information' or 'CLINICAL SUMMARY')
-                - Conclusion
-                - Institution
+		private async Task<ReportViewModel?> ExtractPatientDataAsync(string filePath)
+		{
+			string extension = Path.GetExtension(filePath).ToLower();
 
-                Return the result in JSON format. If a field is missing, set its value to null. Ensure date fields (DOB, StudyDate) are formatted as MM/DD/YYYY.
+			string text = extension switch
+			{
+				".pdf" => ExtractTextFromPdf(filePath),
+				".doc" => ExtractTextFromWord(filePath),
+				".docx" => ExtractTextFromWord(filePath),
+				_ => throw new NotSupportedException($"Unsupported file type: {filePath}")
+			};
 
-                Here is the document text:
-                {text}";
+			return await ParsePatientInfoAsync(text);
+		}
 
-            var messages = new object[]
-            {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = userPrompt }
-            };
+		private string ExtractTextFromPdf(string filePath)
+		{
+			using var pdfReader = new PdfReader(filePath);
+			using var pdfDoc = new PdfDocument(pdfReader);
+			StringBuilder text = new();
 
-            var requestBody = new
-            {
-                model = "gpt-4o",
-                messages,
-                temperature = 0.2,
-                response_format = new { type = "json_object" }
-            };
+			for (int i = 1; i <= pdfDoc.GetNumberOfPages(); i++)
+			{
+				text.Append(PdfTextExtractor.GetTextFromPage(pdfDoc.GetPage(i)));
+				text.AppendLine();
+			}
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
+			return text.ToString();
+		}
 
-            var jsonContent = JsonSerializer.Serialize(requestBody, options);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+		private string ExtractTextFromWord(string filePath)
+		{
+			var doc = new Document(filePath);
+			return doc.ToString(SaveFormat.Text);
+		}
 
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-            client.Timeout = TimeSpan.FromSeconds(180);
+		private async Task<ReportViewModel?> ParsePatientInfoAsync(string text)
+		{
+			var requestBody = new
+			{
+				model = "gpt-4.1-mini",
+				input = new[]
+				{
+					new {
+						role = "system",
+						content = "Extract structured patient data and return JSON only."
+					},
+					new {
+						role = "user",
+						content = $@"
+							Extract:
+							- PatientID
+							- PatientName
+							- DOB (MM/DD/YYYY)
+							- Sex
+							- Findings
+							- StudyDate (MM/DD/YYYY)
+							- Exam
+							- ClinicalInformation
+							- Conclusion
+							- Institution
+							- Age
 
-            using var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", content);
+							Return JSON only.
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                throw new Exception($"OpenAI API call failed: {response.StatusCode} - {error}");
-            }
+							Document:
+							{text}"
+					}
+				}
+			};
 
-            using var stream = await response.Content.ReadAsStreamAsync();
-            using var jsonDoc = await JsonDocument.ParseAsync(stream);
-            var root = jsonDoc.RootElement;
+			var content = new StringContent(
+				JsonSerializer.Serialize(requestBody),
+				Encoding.UTF8,
+				"application/json");
 
-            var choices = root.GetProperty("choices");
-            if (choices.GetArrayLength() == 0)
-                throw new Exception("No choices returned from OpenAI.");
+			using var response = await _httpClient.PostAsync(
+				"https://api.openai.com/v1/responses",
+				content);
 
-            var message = choices[0].GetProperty("message");
-            var resultContent = message.GetProperty("content").GetString();
+			if (!response.IsSuccessStatusCode)
+			{
+				var error = await response.Content.ReadAsStringAsync();
+				throw new Exception($"OpenAI API Error: {error}");
+			}
 
-            if (string.IsNullOrWhiteSpace(resultContent))
-                return null;
+			var json = await response.Content.ReadAsStringAsync();
+			using var doc = JsonDocument.Parse(json);
 
-            resultContent = resultContent.Trim();
-            if (resultContent.StartsWith("```json") && resultContent.EndsWith("```"))
-            {
-                resultContent = resultContent[7..^3].Trim();
-            }
-            else if (resultContent.StartsWith("```") && resultContent.EndsWith("```"))
-            {
-                resultContent = resultContent[3..^3].Trim();
-            }
+			var outputText = doc.RootElement
+				.GetProperty("output")[0]
+				.GetProperty("content")[0]
+				.GetProperty("text")
+				.GetString();
 
-            try
-            {
-                return JsonSerializer.Deserialize<ReportViewModel>(resultContent);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to deserialize AI response");
-                return null;
-            }
-        }
-    }
+			if (string.IsNullOrWhiteSpace(outputText))
+				return null;
+
+			outputText = outputText.Trim();
+			if (outputText.StartsWith("```json") && outputText.EndsWith("```"))
+			{
+				outputText = outputText[7..^3].Trim();
+			}
+			else if (outputText.StartsWith("```") && outputText.EndsWith("```"))
+			{
+				outputText = outputText[3..^3].Trim();
+			}
+
+			try
+			{
+				return JsonSerializer.Deserialize<ReportViewModel>(outputText);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "JSON Deserialization failed");
+				return null;
+			}
+		}
+	}
 }

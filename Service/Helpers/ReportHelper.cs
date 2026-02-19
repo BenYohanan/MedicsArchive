@@ -47,7 +47,7 @@ namespace Service.Helpers
 				StudyDate = r.StudyDate.Value.ToString("dd/MM/yyyy"),
                 DateCreated = r.DateCreated.Value.ToString("dd/MM/yyyy"),
 				Findings = r.StudyDescription,
-				Age = r.Age,
+				Age = r.Age.ToString(),
 				Institution = r.Institution,
                 Status = r.Status,
 				Id = r.Id
@@ -120,7 +120,7 @@ namespace Service.Helpers
 					StudyDate = r.StudyDate.HasValue ? r.StudyDate.Value.ToString("dd/MM/yyyy") : "",
 					DateCreated = r.DateCreated.HasValue ? r.DateCreated.Value.ToString("dd/MM/yyyy") : "",
 					Findings = r.StudyDescription,
-					Age = r.Age,
+					Age = r.Age.ToString(),
 					Institution = r.Institution,
 					Status = r.Status
 				})
