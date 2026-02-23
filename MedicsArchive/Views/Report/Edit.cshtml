@@ -1,0 +1,69 @@
+﻿@model Data.ViewModels.ReportViewModel
+@{
+    ViewData["Title"] = "Edit";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Wrapper -->
+	<div class="page-wrapper">
+	<div class="content">
+		<div class="row align-items-center">
+			<div class="col-md-10 mx-auto">
+				<div class="card">
+					<div class="card-body">
+						<div class="d-flex align-items-center justify-content-between mb-4">
+							<a href="/Report/Index" class="back-icon align-items-center fs-14 d-inline-flex fw-medium">
+								<span class=" d-flex justify-content-center align-items-center rounded-circle me-2">
+									<i class="ti ti-arrow-left fs-12"></i>
+								</span>
+								Back to List
+							</a>
+							<a href="#" class="text-primary" onclick="printReport('@Model.Id')">
+								<i class="ti ti-download"></i> Download 
+							</a>
+						</div>
+
+						<!-- My details -->
+						<div class="bg-light p-3 rounded mb-3">
+							<div>
+								<h4 class="mb-1">@Model.PatientName</h4>
+								<p class="mb-1">@Model.Institution</p>
+								<p class="mb-1">Study Date : <span class="text-dark">@Model.StudyDate</span></p>
+								<p class="mb-1">Patient No : <span class="text-dark">@Model.PatientID</span></p>
+								<p class="mb-1">Age : <span class="text-dark">@Model.Age</span></p>
+							</div>
+						</div>
+						
+						<div>
+							<h4 class="mb-2">Report Details</h4>
+							<div class="mb-3">
+								<label class="form-label">Study Name</label>
+								<input type="text" value="@Model.Exam" id="exam" class="form-control">
+								<input hidden value="@Model.Id" id="id">
+							</div>
+							<div class="mb-3">
+								<label class="form-label"> Clinical Information</label>
+								<textarea class="form-control" rows="3" id="clinicalInformation">@Model.ClinicalInformation</textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Findings</label>
+								<textarea class="form-control" rows="3" id="findings">@Model.Findings</textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Conclusion</label>
+								<textarea class="form-control" rows="3" id="conclusion">@Model.Conclusion</textarea>
+							</div>
+						</div>
+
+						<div class="d-flex justify-content-end align-items-center flex-wrap row-gap-3">
+							<a href="#" class="btn btn-primary d-flex justify-content-center align-items-center ms-2" id="submit_btn" onclick="editReport()"><i class="ti ti-copy me-2"></i>Save</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+			
+</div>
+	<!-- /Page Wrapper -->
+

@@ -139,7 +139,35 @@ namespace MedicsArchive.Controllers
 			return ResponseHelper.JsonSuccess("Report deleted successfully.");
         }
 
-        [HttpPost]
+		[HttpGet]
+		public IActionResult Edit(long reportId)
+		{
+            var vm = new ReportViewModel();
+			var report =  _db.Reports.FirstOrDefault(r => r.Id == reportId);
+			if (report == null)
+				return View(vm);
+
+			 vm = new ReportViewModel
+			{
+				PatientID = report.PatientID,
+				PatientName = report.PatientName,
+				DOB = report.DOB?.ToString("dd/MM/yyyy"),
+				Sex = report.Sex,
+				ClinicalInformation = report.ClinicalInformation,
+				Conclusion = report.Conclusion,
+				Exam = report.Exam,
+				StudyDate = report.StudyDate?.ToString("dd/MM/yyyy"),
+				DateCreated = report.DateCreated?.ToString("dd/MM/yyyy"),
+				Findings = report.StudyDescription,
+				Age = report.Age?.ToString(),
+				Institution = report.Institution,
+				Status = report.Status,
+				Id = report.Id
+			};
+			return View(vm);
+		}
+
+		[HttpPost]
         public async Task<IActionResult> BulkUpdateStatus(List<long> ids, bool approve)
         {
             var reports = _db.Reports.Where(r => ids.Contains(r.Id)).ToList();
@@ -226,5 +254,32 @@ namespace MedicsArchive.Controllers
             redirectUrl = $"https://{HttpContext.Request.Host}/reports/{zipName}";
             return Json(new { isError = false, redirectUrl });
         }
-    }
+		[HttpPost]
+		public JsonResult Edit([FromBody] ReportViewModel reportData)
+		{
+			var response = new { isError = false, msg = "" };
+
+			try
+			{
+				var report = _db.Reports.FirstOrDefault(r => r.Id == reportData.Id);
+				if (report == null)
+				{
+					return Json(new { isError = true, msg = "Report not found" });
+				}
+
+				report.Exam = reportData.Exam;
+				report.ClinicalInformation = reportData.ClinicalInformation;
+				report.StudyDescription = reportData.Findings;
+				report.Conclusion = reportData.Conclusion;
+
+				_db.SaveChanges();
+
+				return Json(new { isError = false, msg = "Report updated successfully" });
+			}
+			catch (Exception ex)
+			{
+				return Json(new { isError = true, msg = $"Error: {ex.Message}" });
+			}
+		}
+	}
 }

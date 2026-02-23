@@ -497,13 +497,12 @@ $('#bulkDelete').click(function () {
 	//hideBulkActions();
 });
 
-
-
 function hideBulkActions() {
 	$('#bulkActions').addClass('hide-important');
 	$('#select-all').prop('checked', false);
 	$('.row-checkbox').prop('checked', false);
 }
+
 function makeUserAdmin() {
 	const userId = $('#userIdToMakeId').val();
 	if (!userId) {
@@ -525,6 +524,38 @@ function makeUserAdmin() {
 		},
 		error: function () {
 			errorAlert("An error occurred while making user admin.");
+		}
+	});
+}
+function editReport() {
+	var defaultBtnValue = $('#submit_btn').html();
+	$('#submit_btn').html("Editing...");
+	$('#submit_btn').attr("disabled", true);
+	var data = {
+		Exam: $('#exam').val(),
+		ClinicalInformation: $('#clinicalInformation').val(),
+		Findings: $('#findings').val(),
+		Conclusion: $('#conclusion').val(),
+		Id: parseInt($('#id').val())
+	};
+
+	$.ajax({
+		url: '/Report/Edit',
+		type: 'POST',
+		contentType: 'application/json', 
+		data: JSON.stringify(data),
+		success: function (response) {
+			if (!response.isError) {
+				var url = "/Report/Index";
+				newSuccessAlert(response.msg, url);
+			} else {
+				$('#submit_btn').html(defaultBtnValue);
+				$('#submit_btn').attr("disabled", false);
+				errorAlert(response.msg);
+			}
+		},
+		error: function () {
+			errorAlert("An error occurred while updating the report.");
 		}
 	});
 }
