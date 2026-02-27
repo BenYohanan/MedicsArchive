@@ -124,7 +124,7 @@ namespace Service.Helpers
 					Institution = r.Institution,
 					Status = r.Status
 				})
-				.ToPagedList(page, 25);
+				.ToPagedList(page, 50);
 
 			return reports;
 		}
